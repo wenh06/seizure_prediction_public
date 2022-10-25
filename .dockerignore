@@ -1,0 +1,6 @@
+save
+!save/age_scaler.pkl
+data
+!data/train-test-split-8-2.json
+!data/named-colors.csv
+images

@@ -1,0 +1,14 @@
+numpy
+pandas
+openpyxl
+scikit-learn==0.24.2
+imbalanced-learn==0.8.1
+xgboost==1.5.2
+diff-binom-confint>=0.0.10
+bib-lookup>=0.0.19
+tqdm
+matplotlib
+seaborn
+lime
+shap
+flask
