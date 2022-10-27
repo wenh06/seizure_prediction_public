@@ -39,12 +39,16 @@ def get_seizure_prediction() -> Response:
             "error_msg": "No input data",
         }
         return jsonify(result)
-    if not isinstance(data, (dict, list)):
+    if (
+        (not isinstance(data, (dict, list)))
+        or (len(data) == 0)
+        or (isinstance(data, list) and any([not isinstance(d, dict) for d in data]))
+    ):
         # raise TypeError("Input data must be a dict or a list of dict")
         result = {
             "code": 2,
             "error_type": "TypeError",
-            "error_msg": "Input data must be a dict or a list of dict",
+            "error_msg": "Input data must be a non-empty dict or a non-empty list of dict",
         }
         return jsonify(result)
     try:

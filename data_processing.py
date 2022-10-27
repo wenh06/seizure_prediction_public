@@ -9,7 +9,7 @@ import pickle
 import warnings
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional, Tuple, List, Union, Sequence, Dict
+from typing import Optional, Tuple, List, Union, Sequence, Dict, Any
 
 import numpy as np
 import pandas as pd
@@ -182,6 +182,7 @@ def get_features(
     feature_list: Optional[List[str]] = None,
     data: Optional[Union[str, Path, pd.DataFrame]] = None,
     ensure_y: bool = False,
+    **kwargs: Any,
 ) -> Tuple[pd.DataFrame, List[str]]:
     """
     Get the features from the preprocessed data.
@@ -253,7 +254,7 @@ def get_features(
         df_refined = df_refined[feature_cols]
     else:
         raise ValueError(
-            f"`y_col` `{preprocess_config.y_col}` is not in the refined data"
+            f"y_col `{preprocess_config.y_col}` is not in the refined data"
         )
     bio_cate_cols = [
         item for item in feature_cols if item in preprocess_config.BIO_cate_var
@@ -262,14 +263,19 @@ def get_features(
         item for item in feature_cols if item in preprocess_config.BIO_cont_var
     ]
     if feature_config.BIO_na_strategy == "drop":
-        if len(bio_cont_cols) > 0:
-            df_refined.drop(columns=bio_cont_cols, inplace=True)
-        if len(bio_cate_cols) > 0:
-            series = (
-                df_refined[bio_cate_cols]
-                == preprocess_config.BIO_mapping[preprocess_config.BIO_na_fillvalue]
-            ).any(axis=1)
-            df_refined = df_refined[~series]
+        if kwargs.get("inference", False):
+            # in inference mode, skip dropping rows with missing values
+            # so that errors can be raised
+            pass
+        else:
+            if len(bio_cont_cols) > 0:
+                df_refined.drop(columns=bio_cont_cols, inplace=True)
+            if len(bio_cate_cols) > 0:
+                series = (
+                    df_refined[bio_cate_cols]
+                    == preprocess_config.BIO_mapping[preprocess_config.BIO_na_fillvalue]
+                ).any(axis=1)
+                df_refined = df_refined[~series]
     elif feature_config.BIO_na_strategy == "random":
         raise NotImplementedError
     elif feature_config.BIO_na_strategy == "knn":
@@ -302,6 +308,22 @@ def get_features(
     else:
         feature_list = feature_cols
 
+    # check nan cells in the refined data
+    if df_refined.isnull().values.any():
+        err = {
+            row_idx
+            + 1: [c for c in df_refined.columns if pd.isnull(df_refined[c][row_idx])]
+            for row_idx in range(df_refined.shape[0])
+            if df_refined.isnull().iloc[row_idx].any()
+        }
+        err = "; ".join(
+            [
+                f"the {row_idx}-th piece of data has nan values in columns `{cols}`"
+                for row_idx, cols in err.items()
+            ]
+        )
+        raise ValueError(f"nan cells detected in the refined data: {err}")
+
     return df_refined, feature_list
 
 
@@ -312,6 +334,7 @@ def get_training_data(
     feature_list: Optional[List[str]] = None,
     data: Optional[Union[str, Path, pd.DataFrame]] = None,
     return_dtype: str = "np",
+    **kwargs: Any,
 ) -> Union[
     Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[str]],
     Tuple[pd.DataFrame, pd.DataFrame, List[str]],

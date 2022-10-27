@@ -220,6 +220,7 @@ class SeizurePredictionModel(ReprMixin):
             feature_list=self.base_model.feature_config.feature_list,
             data=feed_data,
             ensure_y=False,
+            inference=True,
         )[0].values
         proba = self.predict_proba(X)
         pred = (proba > self.thr).astype(int)
