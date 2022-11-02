@@ -44,7 +44,7 @@ __all__ = [
 ]
 
 
-_DATA_FP = DEFAULTS.DATA_DIR / "胶质瘤20220609.xlsx"
+_DATA_FP = DEFAULTS.DATA_DIR / "胶质瘤20220609.xlsx"  # not included in this repo.
 
 
 def load_raw_data(data_fp: Optional[Union[str, Path]] = None) -> pd.DataFrame:

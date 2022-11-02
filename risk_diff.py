@@ -31,6 +31,8 @@ def gen_seizure_risk_diff_TDSB_ext(
     save_path: Optional[Union[Path, str]] = None,
     return_type: str = "pd",
     zh2en: bool = True,
+    comorbidity_type: int = 0,
+    overwrite: bool = False,
 ) -> Union[pd.DataFrame, str, dict]:
     """
     Generate the seizure risk difference table for the feature set of extended TDSB.
@@ -44,6 +46,12 @@ def gen_seizure_risk_diff_TDSB_ext(
         Can be one of "pd", "latex", "md", "markdown", "html", "dict".
     zh2en: bool, default True,
         Whether to convert the column names from Chinese to English.
+    comorbidity_type: int, default 0,
+        the manifistation of type of the comorbidity variables.
+        0 for comparison of "Yes" and "No" for each comorbidity variable.
+        1 for comparisons for the positive part of each comorbidity variable.
+    overwrite: bool, default False,
+        Whether to overwrite the existing saved files.
 
     Returns
     -------
@@ -527,74 +535,154 @@ def gen_seizure_risk_diff_TDSB_ext(
         "凝血功能异常",
     ]
     prefix = "合并症_"
-    ref_group = "低钠血症"
-    n_affected = {
-        comorbidity: {
-            "total": df_data[df_data[prefix + comorbidity] == 1].shape[0],
-            "train": df_train[df_train[prefix + comorbidity] == 1].shape[0],
-            "test": df_test[df_test[prefix + comorbidity] == 1].shape[0],
+    if comorbidity_type == 1:
+        ref_group = "低钠血症"
+        n_affected = {
+            comorbidity: {
+                "total": df_data[df_data[prefix + comorbidity] == 1].shape[0],
+                "train": df_train[df_train[prefix + comorbidity] == 1].shape[0],
+                "test": df_test[df_test[prefix + comorbidity] == 1].shape[0],
+            }
+            for comorbidity in comorbidities
         }
-        for comorbidity in comorbidities
-    }
-    n_positive = {
-        comorbidity: df_data[df_data[prefix + comorbidity] == 1][
-            DataPreprocessConfig.y_col
-        ].sum()
-        for comorbidity in comorbidities
-    }
-    rows.append(["合并症", "", "", "", "", "", "", ""])
-    ret_dict["合并症"] = {}
-    for comorbidity in comorbidities:
-        seizure_risk_confint = compute_confidence_interval(
-            n_positive[comorbidity],
-            n_affected[comorbidity]["total"],
-            method=_CONFINT_METHOD,
-        ).astuple()
-        seizure_risk_diff_confint = compute_difference_confidence_interval(
-            n_positive[comorbidity],
-            n_affected[comorbidity]["total"],
-            n_positive[ref_group],
-            n_affected[ref_group]["total"],
-            method=_CONFINT_METHOD,
-        ).astuple()
-        rows.append(
-            [
-                "",
-                comorbidity,
-                f"{n_affected[comorbidity]['total']}",
-                f"{n_affected[comorbidity]['total'] / len(df_data):.1%}",
-                f"{n_affected[comorbidity]['train']}/{n_affected[comorbidity]['test']}",
-                f"{n_positive[comorbidity]}",
-                f"{n_positive[comorbidity] / n_affected[comorbidity]['total']:.1%} (from {seizure_risk_confint[0]:.1%} to {seizure_risk_confint[1]:.1%})",
-                f"{n_positive[comorbidity] / n_affected[comorbidity]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
-                if comorbidity != ref_group
-                else "REF",
-            ]
-        )
-        ret_dict["合并症"][
-            comorbidity + (Ref_indicator if comorbidity == ref_group else "")
-        ] = {
-            "Affected": {
-                "n": n_affected[comorbidity]["total"],
-                "percent": n_affected[comorbidity]["total"] / len(df_data),
-                "t/v": f"{n_affected[comorbidity]['train']}/{n_affected[comorbidity]['test']}",
-            },
-            "seiuzre_risk": {
-                "n": n_positive[comorbidity],
-                "percent": n_positive[comorbidity] / n_affected[comorbidity]["total"],
-                "confidence_interval": seizure_risk_confint,
-            },
-            "seizure_risk_difference": {
-                "risk_difference": n_positive[comorbidity]
-                / n_affected[comorbidity]["total"]
-                - n_positive[ref_group] / n_affected[ref_group]["total"]
-                if comorbidity != ref_group
-                else 0,
-                "confidence_interval": seizure_risk_diff_confint
-                if comorbidity != ref_group
-                else (0, 0),
-            },
+        n_positive = {
+            comorbidity: df_data[df_data[prefix + comorbidity] == 1][
+                DataPreprocessConfig.y_col
+            ].sum()
+            for comorbidity in comorbidities
         }
+        rows.append(["合并症", "", "", "", "", "", "", ""])
+        ret_dict["合并症"] = {}
+        for comorbidity in comorbidities:
+            seizure_risk_confint = compute_confidence_interval(
+                n_positive[comorbidity],
+                n_affected[comorbidity]["total"],
+                method=_CONFINT_METHOD,
+            ).astuple()
+            seizure_risk_diff_confint = compute_difference_confidence_interval(
+                n_positive[comorbidity],
+                n_affected[comorbidity]["total"],
+                n_positive[ref_group],
+                n_affected[ref_group]["total"],
+                method=_CONFINT_METHOD,
+            ).astuple()
+            rows.append(
+                [
+                    "",
+                    comorbidity,
+                    f"{n_affected[comorbidity]['total']}",
+                    f"{n_affected[comorbidity]['total'] / len(df_data):.1%}",
+                    f"{n_affected[comorbidity]['train']}/{n_affected[comorbidity]['test']}",
+                    f"{n_positive[comorbidity]}",
+                    f"{n_positive[comorbidity] / n_affected[comorbidity]['total']:.1%} (from {seizure_risk_confint[0]:.1%} to {seizure_risk_confint[1]:.1%})",
+                    f"{n_positive[comorbidity] / n_affected[comorbidity]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
+                    if comorbidity != ref_group
+                    else "REF",
+                ]
+            )
+            ret_dict["合并症"][
+                comorbidity + (Ref_indicator if comorbidity == ref_group else "")
+            ] = {
+                "Affected": {
+                    "n": n_affected[comorbidity]["total"],
+                    "percent": n_affected[comorbidity]["total"] / len(df_data),
+                    "t/v": f"{n_affected[comorbidity]['train']}/{n_affected[comorbidity]['test']}",
+                },
+                "seiuzre_risk": {
+                    "n": n_positive[comorbidity],
+                    "percent": n_positive[comorbidity]
+                    / n_affected[comorbidity]["total"],
+                    "confidence_interval": seizure_risk_confint,
+                },
+                "seizure_risk_difference": {
+                    "risk_difference": n_positive[comorbidity]
+                    / n_affected[comorbidity]["total"]
+                    - n_positive[ref_group] / n_affected[ref_group]["total"]
+                    if comorbidity != ref_group
+                    else 0,
+                    "confidence_interval": seizure_risk_diff_confint
+                    if comorbidity != ref_group
+                    else (0, 0),
+                },
+            }
+    elif comorbidity_type == 0:
+        ref_group = "Yes"
+        for comorbidity in comorbidities:
+            n_affected = {
+                "Yes": {
+                    "train": df_train[df_train[prefix + comorbidity] == 1].shape[0],
+                    "test": df_test[df_test[prefix + comorbidity] == 1].shape[0],
+                    "total": df_data[df_data[prefix + comorbidity] == 1].shape[0],
+                },
+                "No": {
+                    "train": df_train[df_train[prefix + comorbidity] == 0].shape[0],
+                    "test": df_test[df_test[prefix + comorbidity] == 0].shape[0],
+                    "total": df_data[df_data[prefix + comorbidity] == 0].shape[0],
+                },
+            }
+            n_positive = {
+                "Yes": df_data[df_data[prefix + comorbidity] == 1][
+                    DataPreprocessConfig.y_col
+                ].sum(),
+                "No": df_data[df_data[prefix + comorbidity] == 0][
+                    DataPreprocessConfig.y_col
+                ].sum(),
+            }
+            rows.append([comorbidity, "", "", "", "", "", "", ""])
+            ret_dict[comorbidity] = {}
+            for group in ["Yes", "No"]:
+                seizure_risk_confint = compute_confidence_interval(
+                    n_positive[group],
+                    n_affected[group]["total"],
+                    method=_CONFINT_METHOD,
+                ).astuple()
+                seizure_risk_diff_confint = compute_difference_confidence_interval(
+                    n_positive[group],
+                    n_affected[group]["total"],
+                    n_positive[ref_group],
+                    n_affected[ref_group]["total"],
+                    method=_CONFINT_METHOD,
+                ).astuple()
+                rows.append(
+                    [
+                        "",
+                        group,
+                        f"{n_affected[group]['total']}",
+                        f"{n_affected[group]['total'] / len(df_data):.1%}",
+                        f"{n_affected[group]['train']}/{n_affected[group]['test']}",
+                        f"{n_positive[group]}",
+                        f"{n_positive[group] / n_affected[group]['total']:.1%} (from {seizure_risk_confint[0]:.1%} to {seizure_risk_confint[1]:.1%})",
+                        f"{n_positive[group] / n_affected[group]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
+                        if group != ref_group
+                        else "REF",
+                    ]
+                )
+                ret_dict[comorbidity][
+                    group + (Ref_indicator if group == ref_group else "")
+                ] = {
+                    "Affected": {
+                        "n": n_affected[group]["total"],
+                        "percent": n_affected[group]["total"] / len(df_data),
+                        "t/v": f"{n_affected[group]['train']}/{n_affected[group]['test']}",
+                    },
+                    "seiuzre_risk": {
+                        "n": n_positive[group],
+                        "percent": n_positive[group] / n_affected[group]["total"],
+                        "confidence_interval": seizure_risk_confint,
+                    },
+                    "seizure_risk_difference": {
+                        "risk_difference": n_positive[group]
+                        / n_affected[group]["total"]
+                        - n_positive[ref_group] / n_affected[ref_group]["total"]
+                        if group != ref_group
+                        else 0,
+                        "confidence_interval": seizure_risk_diff_confint
+                        if group != ref_group
+                        else (0, 0),
+                    },
+                }
+    else:
+        raise ValueError("comorbidity_type should be 0 or 1")
 
     # complication infection
     # ref_group = 0
@@ -920,7 +1008,7 @@ def gen_seizure_risk_diff_TDSB_ext(
 
     if save_path is None:
         save_path = DEFAULTS.DATA_DIR / "seizure_risk_table.csv"
-    if not save_path.is_file():
+    if not save_path.is_file() or overwrite:
         df.to_csv(save_path, index=False, header=False)
         df.to_excel(save_path.with_suffix(".xlsx"), index=False, header=False)
 
@@ -933,7 +1021,7 @@ def gen_seizure_risk_diff_TDSB_ext(
             2
         ] = r"\multicolumn{2}{l}{Feature} & \multicolumn{3}{l}{Affected} & \multicolumn{2}{l}{Seizure Risk ($95\%$ CI)} & Seizure Risk Difference  ($95\%$ CI) \\ \cline{1-2}\cline{3-5}\cline{6-7}\cline{8-8}"
         ret_lines = "\n".join(rows)
-        if not save_path.with_suffix(".tex").is_file():
+        if not save_path.with_suffix(".tex").is_file() or overwrite:
             save_path.with_suffix(".tex").write_text(ret_lines)
         return ret_lines
     elif return_type.lower() in ["md", "markdown"]:
@@ -942,3 +1030,8 @@ def gen_seizure_risk_diff_TDSB_ext(
         return df.to_html(index=False)
     elif return_type.lower() == "dict":
         return ret_dict
+
+
+if __name__ == "__main__":
+    gen_seizure_risk_diff_TDSB_ext(return_type="pd", overwrite=True)
+    gen_seizure_risk_diff_TDSB_ext(return_type="latex", overwrite=True)

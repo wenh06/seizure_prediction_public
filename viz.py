@@ -16,7 +16,7 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.base import BaseEstimator
 import shap
 
-from config import DEFAULTS
+from config import DEFAULTS, DataPreprocessConfig
 from data_processing import load_raw_data
 from grid_search import gather_grid_search_results
 from feature_selection import FeatureSelector
@@ -37,25 +37,26 @@ __all__ = [
 ]
 
 
-sns.set()
-plt.rcParams["xtick.labelsize"] = 18
-plt.rcParams["ytick.labelsize"] = 18
-plt.rcParams["axes.labelsize"] = 24
-plt.rcParams["legend.fontsize"] = 20
-plt.rcParams["legend.title_fontsize"] = 22
+# sns.set()
+# plt.rcParams["xtick.labelsize"] = 18
+# plt.rcParams["ytick.labelsize"] = 18
+# plt.rcParams["axes.labelsize"] = 24
+# plt.rcParams["legend.fontsize"] = 20
+# plt.rcParams["legend.title_fontsize"] = 22
 
-mpl.use("pgf")  # stwich backend to pgf
+# mpl.use("pgf")  # stwich backend to pgf
 
 font_dirs = [str(DEFAULTS.FONT_DIR)]
 font_files = font_manager.findSystemFonts(fontpaths=font_dirs)
 for font_file in font_files:
     font_manager.fontManager.addfont(font_file)
 _font_names = [item.name for item in font_manager.fontManager.ttflist]
-if "Times New Roman" in _font_names:
-    # setting "New Times Roman" would cause LatexError
-    plt.rcParams["font.family"] = "times"
-else:
-    plt.rcParams["font.family"] = "JDLangZhengTi"
+# if "Times New Roman" in _font_names:
+#     # times.ttf
+#     # setting "Times New Roman" would cause LatexError
+#     plt.rcParams["font.family"] = "times"
+# else:
+#     plt.rcParams["font.family"] = "JDLangZhengTi"
 del font_dirs, font_files, font_file
 
 
@@ -110,6 +111,7 @@ def plot_age_distribution() -> Tuple[plt.Figure, plt.Axes]:
         The axes object.
 
     """
+    mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set()
     plt.rcParams["xtick.labelsize"] = 20
     plt.rcParams["ytick.labelsize"] = 20
@@ -117,8 +119,12 @@ def plot_age_distribution() -> Tuple[plt.Figure, plt.Axes]:
     plt.rcParams["legend.fontsize"] = 20
     plt.rcParams["legend.title_fontsize"] = 24
     if "Times New Roman" in _font_names:
-        # setting "New Times Roman" would cause LatexError
-        plt.rcParams["font.family"] = "times"
+        # times.ttf
+        if mpl.get_backend() == "pgf":
+            # setting "Times New Roman" would cause LatexError
+            plt.rcParams["font.family"] = "times"
+        else:
+            plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
@@ -164,6 +170,7 @@ def plot_sex_distribution() -> Tuple[plt.Figure, plt.Axes]:
         The axes object.
 
     """
+    mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set()
     plt.rcParams["xtick.labelsize"] = 20
     plt.rcParams["ytick.labelsize"] = 20
@@ -171,8 +178,12 @@ def plot_sex_distribution() -> Tuple[plt.Figure, plt.Axes]:
     plt.rcParams["legend.fontsize"] = 20
     plt.rcParams["legend.title_fontsize"] = 24
     if "Times New Roman" in _font_names:
-        # setting "New Times Roman" would cause LatexError
-        plt.rcParams["font.family"] = "times"
+        # times.ttf
+        if mpl.get_backend() == "pgf":
+            # setting "Times New Roman" would cause LatexError
+            plt.rcParams["font.family"] = "times"
+        else:
+            plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
@@ -199,7 +210,9 @@ def plot_sex_distribution() -> Tuple[plt.Figure, plt.Axes]:
 
 
 def plot_feature_importance(
-    clf: BaseEstimator, sort: bool = True
+    clf: BaseEstimator,
+    sort: bool = True,
+    zh2en: bool = True,
 ) -> Tuple[plt.Figure, plt.Axes]:
     """
     Plot the feature importance of the given classifier.
@@ -210,6 +223,8 @@ def plot_feature_importance(
         The classifier.
     sort: bool, default True,
         Whether to sort the features by their importance.
+    zh2en: bool, default True,
+        If True, convert the feature names from Chinese to English.
 
     Returns
     -------
@@ -219,20 +234,32 @@ def plot_feature_importance(
         The axes object.
 
     """
+    mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set()
     plt.rcParams["xtick.labelsize"] = 20
     plt.rcParams["ytick.labelsize"] = 20
     plt.rcParams["axes.labelsize"] = 26
     plt.rcParams["legend.fontsize"] = 22
     plt.rcParams["legend.title_fontsize"] = 24
-    if "Times New Roman" in _font_names:
-        # setting "New Times Roman" would cause LatexError
-        plt.rcParams["font.family"] = "times"
+    if "Times New Roman" in _font_names and zh2en:
+        # times.ttf
+        if mpl.get_backend() == "pgf":
+            # setting "Times New Roman" would cause LatexError
+            plt.rcParams["font.family"] = "times"
+        else:
+            plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
     feature_list = clf.feature_config.feature_list
-    fig, ax = plt.subplots(figsize=(12, 0.35 * len(feature_list)))
+    if zh2en:
+        feature_list = [
+            DataPreprocessConfig.zh2en_mapping[item].replace("_", "-")
+            if not item.startswith("BIO")
+            else item
+            for item in feature_list
+        ]
+    fig, ax = plt.subplots(figsize=(12, 0.5 * len(feature_list)))
     if sort:
         indices = np.argsort(clf.feature_importances_)
         ax.barh(np.array(feature_list)[indices], clf.feature_importances_[indices])
@@ -242,7 +269,12 @@ def plot_feature_importance(
 
 
 def plot_feature_permutation_importance(
-    clf: BaseEstimator, X_test: np.ndarray, y_test: np.ndarray, sort: bool = True
+    clf: BaseEstimator,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    sort: bool = True,
+    merge_split_variables: bool = True,
+    zh2en: bool = True,
 ) -> Tuple[plt.Figure, plt.Axes]:
     """
     Plot the feature permutation importance of the given classifier.
@@ -257,6 +289,10 @@ def plot_feature_permutation_importance(
         The test labels.
     sort: bool, default True,
         Whether to sort the features by their importance.
+    zh2en: bool, default True,
+        If True, convert the feature names from Chinese to English.
+    merge_split_variables: bool, default True,
+        If True, merge the split variables into one variable.
 
     Returns
     -------
@@ -266,28 +302,62 @@ def plot_feature_permutation_importance(
         The axes object.
 
     """
+    mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set()
     plt.rcParams["xtick.labelsize"] = 20
     plt.rcParams["ytick.labelsize"] = 20
     plt.rcParams["axes.labelsize"] = 26
     plt.rcParams["legend.fontsize"] = 22
     plt.rcParams["legend.title_fontsize"] = 24
-    if "Times New Roman" in _font_names:
-        # setting "New Times Roman" would cause LatexError
-        plt.rcParams["font.family"] = "times"
+    if "Times New Roman" in _font_names and zh2en:
+        # times.ttf
+        if mpl.get_backend() == "pgf":
+            # setting "Times New Roman" would cause LatexError
+            plt.rcParams["font.family"] = "times"
+        else:
+            plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
     feature_list = clf.feature_config.feature_list
-    fig, ax = plt.subplots(figsize=(12, 0.35 * len(feature_list)))
     perm_importance = permutation_importance(clf, X_test, y_test, scoring="roc_auc")
+    importances_mean = perm_importance.importances_mean
+
+    if merge_split_variables:
+        tumor_zone_inds = [
+            idx for idx, item in enumerate(feature_list) if item.startswith("肿瘤分区")
+        ]
+        comorbidity_inds = [
+            idx for idx, item in enumerate(feature_list) if item.startswith("合并症")
+        ]
+        mask = np.ones_like(importances_mean, dtype=bool)
+        mask[tumor_zone_inds + comorbidity_inds] = False
+        tmp_values, tmp_features = [], []
+        if len(tumor_zone_inds) > 0:
+            tmp_values.append(importances_mean[tumor_zone_inds].sum())
+            tmp_features.append("肿瘤分区")
+        if len(comorbidity_inds) > 0:
+            tmp_values.append(importances_mean[comorbidity_inds].sum())
+            tmp_features.append("合并症")
+        importances_mean = importances_mean[mask]
+        importances_mean = np.append(importances_mean, tmp_values)
+        feature_list = np.append(np.array(feature_list)[mask], tmp_features)
+
+    if zh2en:
+        feature_list = [
+            DataPreprocessConfig.zh2en_mapping[item].replace("_", "-")
+            if not item.startswith("BIO")
+            else item
+            for item in feature_list
+        ]
+
+    fig, ax = plt.subplots(figsize=(12, 0.5 * len(feature_list)))
     if sort:
-        indices = np.argsort(perm_importance.importances_mean)
-        ax.barh(
-            np.array(feature_list)[indices], perm_importance.importances_mean[indices]
-        )
+        indices = np.argsort(importances_mean)
+        ax.barh(np.array(feature_list)[indices], importances_mean[indices])
     else:
-        ax.barh(feature_list, perm_importance.importances_mean)
+        ax.barh(feature_list, importances_mean)
+    ax.set_xlabel("Permutation Importance Mean on AUC")
     return fig, ax
 
 
@@ -326,6 +396,7 @@ def plot_roc_curve(
         The axes object.
 
     """
+    mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set()
     plt.rcParams["xtick.labelsize"] = 20
     plt.rcParams["ytick.labelsize"] = 20
@@ -333,8 +404,12 @@ def plot_roc_curve(
     plt.rcParams["legend.fontsize"] = 22
     plt.rcParams["legend.title_fontsize"] = 24
     if "Times New Roman" in _font_names:
-        # setting "New Times Roman" would cause LatexError
-        plt.rcParams["font.family"] = "times"
+        # times.ttf
+        if mpl.get_backend() == "pgf":
+            # setting "Times New Roman" would cause LatexError
+            plt.rcParams["font.family"] = "times"
+        else:
+            plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
@@ -407,6 +482,7 @@ def plot_grid_search_agg_boxplot(
         The axes object.
 
     """
+    mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set()
     plt.rcParams["xtick.labelsize"] = 18
     plt.rcParams["ytick.labelsize"] = 18
@@ -414,8 +490,12 @@ def plot_grid_search_agg_boxplot(
     plt.rcParams["legend.fontsize"] = 18
     plt.rcParams["legend.title_fontsize"] = 20
     if "Times New Roman" in _font_names:
-        # setting "New Times Roman" would cause LatexError
-        plt.rcParams["font.family"] = "times"
+        # times.ttf
+        if mpl.get_backend() == "pgf":
+            # setting "Times New Roman" would cause LatexError
+            plt.rcParams["font.family"] = "times"
+        else:
+            plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
@@ -455,6 +535,8 @@ def plot_grid_search_agg_boxplot(
 
 def plot_seizure_risk_difference(
     seizure_risk_dict: Optional[dict] = None,
+    comorbidity_type: int = 0,
+    zh2en: bool = True,
 ) -> Tuple[plt.Figure, plt.Axes]:
     """
     Plot the seizure risk difference.
@@ -465,6 +547,13 @@ def plot_seizure_risk_difference(
         The dictionary of seizure risk difference.
         If None, use the default dictionary generated by
         `get_seizure_risk_difference`.
+    comorbidity_type: int, default 0,
+        valid only when seizure_risk_dict is None.
+        The manifistation of type of the comorbidity variables.
+        0 for comparison of "Yes" and "No" for each comorbidity variable.
+        1 for comparisons for the positive part of each comorbidity variable.
+    zh2en: bool, default True,
+        If True, convert the feature names from Chinese to English.
 
     Returns
     -------
@@ -475,9 +564,17 @@ def plot_seizure_risk_difference(
 
     """
     if seizure_risk_dict is None:
-        seizure_risk_dict = gen_seizure_risk_diff_TDSB_ext(return_type="dict")
+        seizure_risk_dict = gen_seizure_risk_diff_TDSB_ext(
+            return_type="dict", comorbidity_type=comorbidity_type, zh2en=zh2en
+        )
 
+    mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set_style("white")
+    plt.rcParams["xtick.labelsize"] = 18
+    plt.rcParams["ytick.labelsize"] = 18
+    plt.rcParams["axes.labelsize"] = 24
+    plt.rcParams["legend.fontsize"] = 20
+    plt.rcParams["legend.title_fontsize"] = 22
     mpl.use("pgf")  # stwich backend to pgf
     plt.rcParams.update(
         {
@@ -495,11 +592,11 @@ def plot_seizure_risk_difference(
         }
     )
     if "Times New Roman" in _font_names:
-        # setting "New Times Roman" would cause LatexError
+        # times.ttf
+        # setting "Times New Roman" would cause LatexError
         plt.rcParams["font.family"] = "times"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
-    # mpl.rc("font", family="serif", serif="cm10")
 
     scatter_values = list_sum(
         [
@@ -542,7 +639,7 @@ def plot_seizure_risk_difference(
     x_upper = 0.1 * np.ceil(10 * np.max([itv[1] for itv in confints]))
 
     fig, ax = plt.subplots(
-        figsize=((x_upper - x_lower + 0.2) * 8, 0.8 * len(scatter_values))
+        figsize=((x_upper - x_lower + 0.2) * 8, 0.5 * len(scatter_values))
     )
     # plot the risk as diamonds
     ax.scatter(
@@ -626,6 +723,23 @@ def plot_feature_selection_results(
         The axes object.
 
     """
+    mpl.rcParams.update(mpl.rcParamsDefault)
+    sns.set()
+    plt.rcParams["xtick.labelsize"] = 18
+    plt.rcParams["ytick.labelsize"] = 18
+    plt.rcParams["axes.labelsize"] = 24
+    plt.rcParams["legend.fontsize"] = 20
+    plt.rcParams["legend.title_fontsize"] = 22
+    if "Times New Roman" in _font_names:
+        # times.ttf
+        if mpl.get_backend() == "pgf":
+            # setting "Times New Roman" would cause LatexError
+            plt.rcParams["font.family"] = "times"
+        else:
+            plt.rcParams["font.family"] = "Times New Roman"
+    else:
+        plt.rcParams["font.family"] = "JDLangZhengTi"
+
     if isinstance(sel_res, (str, Path)):
         print(f"Loading feature selection results from {sel_res}")
         sel_res = FeatureSelector.load_selections(path=sel_res)
@@ -649,13 +763,17 @@ def plot_shap_summary(
     shap_values: List[np.ndarray],
     X_test: np.ndarray,
     feature_list: Optional[List[str]] = None,
+    class_idx: Optional[int] = 1,
+    zh2en: bool = True,
+    max_display: int = 10,
+    **kwargs,
 ) -> Dict[str, plt.Figure]:
     """
     Plot SHAP summary plots.
 
     Parameters
     ----------
-    shap_values: list of np.ndarray,
+    shap_values: list of np.ndarray (of length 2 for binary classification),
         List of shap values for the model.
         can be obtained via, for example,
 
@@ -665,33 +783,90 @@ def plot_shap_summary(
         explainer = shap.KernelExplainer(model.predict_proba, X_train)
         shap_values = explainer.shap_values(X_test)
         ```
-    X_test: np.ndarray, optional,
+    X_test: np.ndarray,
         Test data (features) used for `shap.summary_plot`.
     feature_list: list of str, optional,
         List of feature names.
+    class_idx: int, default 1,
+        The index of the class to plot the summary plot for.
+        None for multi(2)-class output.
+    zh2en: bool, default True,
+        If True, convert the feature names from Chinese to English.
+    max_display: int, default 10,
+        The maximum number of features to display in the summary plot.
+    kwargs: dict,
+        Other keyword arguments for `shap.summary_plot`.
 
     Returns
     -------
     figs: dict of plt.Figure,
         Dictionary of figures, including
-        - `beeswarm`: beeswarm plot of shap values
+        - `dot`: beeswarm plot of shap values of dot type
+        - `violin`: beeswarm plot of shap values of violin type
         - `bar`: bar plot of shap values
 
     """
+    mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set()
-    if "Times New Roman" in _font_names:
-        # setting "New Times Roman" would cause LatexError
-        plt.rcParams["font.family"] = "times"
+    plt.rcParams["xtick.labelsize"] = 18
+    plt.rcParams["ytick.labelsize"] = 18
+    plt.rcParams["axes.labelsize"] = 24
+    plt.rcParams["legend.fontsize"] = 20
+    plt.rcParams["legend.title_fontsize"] = 22
+    if "Times New Roman" in _font_names and zh2en:
+        # times.ttf
+        if mpl.get_backend() == "pgf":
+            # setting "Times New Roman" would cause LatexError
+            plt.rcParams["font.family"] = "times"
+        else:
+            plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
+    if class_idx is None:
+        shap_values_ = shap_values
+    else:
+        assert class_idx in [0, 1], f"`class_idx` should be 0 or 1, but got {class_idx}"
+        shap_values_ = shap_values[class_idx]
+
     fig_beeswarm, _ = plt.subplots()
     fig_beeswarm = plt.gcf()
-    shap.summary_plot(shap_values[1], X_test, feature_names=feature_list, show=False)
+    if zh2en:
+        feature_list = [
+            DataPreprocessConfig.zh2en_mapping[item].replace("_", "-")
+            if not item.startswith("BIO")
+            else item
+            for item in feature_list
+        ]
+    shap.summary_plot(
+        shap_values_,
+        X_test,
+        feature_names=feature_list,
+        show=False,
+        max_display=min(max_display, len(feature_list)),
+        **kwargs,
+    )
+    fig_violin, _ = plt.subplots()
+    fig_violin = plt.gcf()
+    shap.summary_plot(
+        shap_values_,
+        X_test,
+        feature_names=feature_list,
+        show=False,
+        plot_type="violin",
+        max_display=min(max_display, len(feature_list)),
+        **kwargs,
+    )
     fig_bar, _ = plt.subplots()
     fig_bar = plt.gcf()
     shap.summary_plot(
-        shap_values[1], X_test, feature_names=feature_list, show=False, plot_type="bar"
+        shap_values_,
+        X_test,
+        feature_names=feature_list,
+        show=False,
+        plot_type="bar",
+        max_display=min(max_display, len(feature_list)),
+        **kwargs,
     )
-    figs = {"beeswarm": fig_beeswarm, "bar": fig_bar}
+    figs = {"dot": fig_beeswarm, "violin": fig_violin, "bar": fig_bar}
     return figs

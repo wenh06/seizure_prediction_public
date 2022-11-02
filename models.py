@@ -22,9 +22,13 @@ from xgboost import XGBClassifier
 
 from config import CFG
 from utils import ReprMixin
-from nn import SeizureMLP
 from metrics import SeizureClassificationMetrics
 from data_processing import get_features
+
+try:
+    from nn import SeizureMLP
+except ModuleNotFoundError:  # torch not installed
+    SeizureMLP = Any
 
 
 __all__ = [

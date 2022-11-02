@@ -167,11 +167,11 @@ DataPreprocessConfig.zh2en_mapping = {
     "年龄段": "AgeGroup",
     "并发症感染": "ComplicationInfection",
     "手术切除方式": "SurgicalResectionMethod",
-    "部分切除": "部分切除",  # TODO: 待翻译, 格式与其他保持一致
+    "部分切除": "PartialResection",  # TODO: 待翻译, 格式与其他保持一致
     "大部切除": "大部切除",  # TODO: 待翻译, 格式与其他保持一致
-    "次全切": "次全切",  # TODO: 待翻译, 格式与其他保持一致
-    "近全切": "近全切",  # TODO: 待翻译, 格式与其他保持一致
-    "全切": "Total",  # TODO: 待翻译, 格式与其他保持一致
+    "次全切": "SubTotalResection",  # TODO: 待翻译, 格式与其他保持一致
+    "近全切": "GrossTotalResection",  # TODO: 待翻译, 格式与其他保持一致
+    "全切": "TotalResection",  # TODO: 待翻译, 格式与其他保持一致
     "其它": "Other",
     "病理分级": "PathologicalGrading",
     "复发胶质瘤": "RecurrentGlioma",
@@ -221,7 +221,7 @@ DataPreprocessConfig.zh2en_mapping = {
     "C肿瘤分区2": "CateTumorZone2",
     "术后是否用药": "IsDrugAfterSurgery",
     "用药改变": "MedicationChange",
-    "乙N丙N": "BNCN",  # ?
+    # "乙N丙N": "BNCN",  # ?
 }
 _tmp_dict = {}
 for k, v in DataPreprocessConfig.zh2en_mapping.items():
@@ -600,7 +600,7 @@ FeatureSelectionConfig.sequential = CFG(
 
 
 ServingConfig = CFG()
-ServingConfig.model_path = DEFAULTS.SAVE_DIR / "spm_rf_TDSB_drop.pkl"
+ServingConfig.model_path = DEFAULTS.SAVE_DIR / "spm_rf_TDSB_drop.pkl"  # not included in this repo.
 
 
 clf_metric_aliases = CFG(

@@ -1,7 +1,7 @@
-FROM python:3.8-slim
+FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime
+# NOTE: the base image has python version 3.7
 
 ARG serving=true
-ARG torch=false
 
 ## The MAINTAINER instruction sets the author field of the generated images.
 LABEL maintainer="wenh06@gmail.com"
@@ -14,8 +14,6 @@ RUN apt install ffmpeg libsm6 libxext6 tar unzip wget vim nano -y
 # RUN apt install python3-pip
 RUN ln -s /usr/bin/python3 /usr/bin/python && ln -s /usr/bin/pip3 /usr/bin/pip
 # RUN pip install --upgrade pip
-
-RUN if [ "$torch" = "true" ] ; then pip install torch==1.10.0 ; fi
 
 RUN mkdir /seizure_prediction
 COPY ./requirements.txt /seizure_prediction

@@ -854,6 +854,7 @@ class SeizureClassificationMetrics(ClassificationMetrics):
             for k, v in self._metrics.items()
             if not k.startswith("macro_")
         }
+        # use the AUC score computed from roc_auc_score from sklearn
         metrics.pop("auroc")
         metrics.pop("auprc")
         metrics["auc"] = roc_auc_score(y_true, y_prob)
