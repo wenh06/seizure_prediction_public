@@ -166,62 +166,61 @@ DataPreprocessConfig.zh2en_mapping = {
     "女": "Female",
     "年龄段": "AgeGroup",
     "并发症感染": "ComplicationInfection",
-    "手术切除方式": "SurgicalResectionMethod",
-    "部分切除": "PartialResection",  # TODO: 待翻译, 格式与其他保持一致
-    "大部切除": "大部切除",  # TODO: 待翻译, 格式与其他保持一致
-    "次全切": "SubTotalResection",  # TODO: 待翻译, 格式与其他保持一致
-    "近全切": "GrossTotalResection",  # TODO: 待翻译, 格式与其他保持一致
-    "全切": "TotalResection",  # TODO: 待翻译, 格式与其他保持一致
-    "其它": "Other",
-    "病理分级": "PathologicalGrading",
+    "手术切除方式": "ExtentOfResection",
+    "部分切除": "Partial",
+    "大部切除": "Partial",
+    "次全切": "SubTotal",
+    "近全切": "SubTotal",
+    "全切": "GrossTotal",
+    "其它切除方式": "SubtotalOrPartial",
+    "病理分级": "WHOGrading",
     "复发胶质瘤": "RecurrentGlioma",
     "去骨瓣减压术": "DecompressiveCraniectomy",
-    "病理分型粗": "PathologicalClassification",
-    "分型胶质母": "分型胶质母",  # TODO: 待翻译, 格式与其他保持一致
-    "分型间变型星形": "分型间变型星形",  # TODO: 待翻译, 格式与其他保持一致
-    "分型少突星形": "分型少突星形",  # TODO: 待翻译, 格式与其他保持一致
-    "分型星形": "分型星形",  # TODO: 待翻译, 格式与其他保持一致
-    "分型毛细胞星形": "分型毛细胞星形",  # TODO: 待翻译, 格式与其他保持一致
-    "分型中枢神经": "分型中枢神经",  # TODO: 待翻译, 格式与其他保持一致
-    "分型混合": "分型混合",  # TODO: 待翻译, 格式与其他保持一致
-    "分型其它": "分型其它",  # TODO: 待翻译, 格式与其他保持一致
+    "病理分型粗": "Pathology",
+    "分型胶质母": "GlioblastomaMultiforme",
+    "分型间变型星形": "AnaplasticAstrocytoma",
+    "分型少突星形": "Oligoastrocytoma",
+    "分型星形": "Asrocytoma",
+    "分型毛细胞星形": "PilocyticAstrocytoma",
+    "分型中枢神经": "Neurocytoma",
+    "分型混合": "Mixed",
+    "分型其它": "Others",
     "手术时长": "SurgeryDuration",
-    "肿瘤大小": "TumorSize",
+    "肿瘤大小": "MaximumDiameter(cm)",
     "出血量": "BleedingAmount",
     "合并症": "Comorbidity",
     "合并症_低钠血症": "Comorbidity_Hyponatremia",
-    "合并症_低蛋白血症": "Comorbidity_Hypoalbuminemia",
+    "合并症_低蛋白血症": "Comorbidity_Hypoproteinemia",
     "合并症_低钾血症": "Comorbidity_Hypokalemia",
     "合并症_高氯血症": "Comorbidity_Hyperchloremia",
     "合并症_低氯血症": "Comorbidity_Hypochloremia",
-    "合并症_中枢神经感染": "Comorbidity_CentralNervousInfection",
+    "合并症_中枢神经感染": "Comorbidity_CentralNervousSystemInfection",
     "合并症_脑积水": "Comorbidity_Hydrocephalus",
-    "合并症_凝血功能异常": "Comorbidity_CoagulationAbnormality",
-    "肿瘤分区": "TumorZone",
-    "肿瘤分区_颞": "TumorZone_Temporal",
-    "肿瘤分区_顶": "TumorZone_Parietal",
-    "肿瘤分区_额": "TumorZone_Frontal",
-    "肿瘤分区_小脑": "TumorZone_Cerebellum",
-    "肿瘤分区_脑室": "TumorZone_Ventricle",
-    "肿瘤分区_岛": "TumorZone_Insular",
-    "肿瘤分区_枕": "TumorZone_Occipital",
-    "肿瘤分区_额或颞": "TumorZone_FrontalOrTemporal",
-    "肿瘤分区_丘脑": "TumorZone_Thalamus",
-    "肿瘤分区_胼胝体": "TumorZone_CorpusCallosum",
-    "肿瘤分区_其它": "TumorZone_Other",
-    "肿瘤分区_基底节": "TumorZone_BasalGanglia",
-    "肿瘤分区_鞍区": "TumorZone_Sellar",
-    "肿瘤分区_脑干": "TumorZone_Brainstem",
+    "合并症_凝血功能异常": "Comorbidity_CoagulationDisorders",
+    "肿瘤分区": "RegionInvolved",
+    "肿瘤分区_颞": "Region_Temporal",
+    "肿瘤分区_顶": "Region_Parietal",
+    "肿瘤分区_额": "Region_Frontal",
+    "肿瘤分区_小脑": "Region_Cerebellum",
+    "肿瘤分区_脑室": "Region_Ventricle",
+    "肿瘤分区_岛": "Region_Insular",
+    "肿瘤分区_枕": "Region_Occipital",
+    "肿瘤分区_丘脑": "Region_Thalamus",
+    "肿瘤分区_胼胝体": "Region_CorpusCallosum",
+    "肿瘤分区_其它": "Region_Others",
+    "肿瘤分区_基底节": "Region_BasalGanglia",
+    "肿瘤分区_鞍区": "Region_SellarRegion",
+    "肿瘤分区_脑干": "Region_Brainstem",
+    "肿瘤分区_额或颞": "Region_FrontalOrTemporal",  # NOT used
     "C年龄": "CateAge",
     "C手术时长小时": "CateSurgeryDuration",
-    "C肿瘤最大直径": "CateTumorSize",
+    "C肿瘤最大直径": "CateMaximumDiameter (cm)",
     "C出血量": "CateBleedingAmount",
     "C病理分级": "CatePathologicalGrading",
-    "C肿瘤分区1": "CateTumorZone1",
-    "C肿瘤分区2": "CateTumorZone2",
+    "C肿瘤分区1": "CateRegion1",
+    "C肿瘤分区2": "CateRegion2",
     "术后是否用药": "IsDrugAfterSurgery",
     "用药改变": "MedicationChange",
-    # "乙N丙N": "BNCN",  # ?
 }
 _tmp_dict = {}
 for k, v in DataPreprocessConfig.zh2en_mapping.items():
@@ -454,7 +453,7 @@ FeatureConfig.sets.TDS = FeatureConfig.sets.TD + DataPreprocessConfig.surgery_va
 # FeatureConfig.sets.TDSM = FeatureConfig.sets.TDS + DataPreprocessConfig.medication_var
 FeatureConfig.sets.TDB = FeatureConfig.sets.TD + ["BIO_IDH1-R132"]
 FeatureConfig.sets.TDSB = FeatureConfig.sets.TDS + ["BIO_IDH1-R132"]
-FeatureConfig.sets.TDSB_ext = FeatureConfig.sets.TDS + DataPreprocessConfig.BIO_cate_var
+FeatureConfig.sets.TDSB_ext = FeatureConfig.sets.TDS + DataPreprocessConfig.BIO_var
 # FeatureConfig.sets.TDMB = FeatureConfig.sets.TDM + ["BIO_IDH1-R132"]
 # FeatureConfig.sets.TDSMB = FeatureConfig.sets.TDSM + ["BIO_IDH1-R132"]
 FeatureConfig.BIO_na_strategy = (
@@ -600,7 +599,7 @@ FeatureSelectionConfig.sequential = CFG(
 
 
 ServingConfig = CFG()
-ServingConfig.model_path = DEFAULTS.SAVE_DIR / "spm_rf_TDSB_drop.pkl"  # not included in this repo.
+ServingConfig.model_path = DEFAULTS.SAVE_DIR / "spm_rf_TDSB_drop.pkl"
 
 
 clf_metric_aliases = CFG(

@@ -9,7 +9,7 @@ from copy import deepcopy
 from collections import Counter
 from contextlib import contextmanager
 from functools import reduce
-from typing import Sequence, Tuple, Callable, Dict, List, Any
+from typing import Optional, Union, Sequence, Tuple, Callable, Dict, List, Any
 
 import numpy as np
 import pandas as pd
@@ -258,16 +258,29 @@ class ReprMixin(object):
         return []
 
 
-def separate_by_capital_letters(string: str) -> str:
+def separate_by_capital_letters(
+    string: str,
+    capitalize: bool = True,
+    drop: Optional[Union[str, Sequence[str]]] = None,
+) -> str:
     """
     separate a string by capital letters,
-    e.g. "HelloWorld" -> "Hello World"
+    e.g. "HelloWorld" -> "Hello World",
+    or -> "Hello world" if `capitalize` is True
     """
+    if drop is None:
+        drop = []
+    elif isinstance(drop, str):
+        drop = [drop]
     separated = re.findall("[A-Z][^A-Z]*", string)
+    separated = list(filter(lambda w: w.lower() not in drop + [""], separated))
     if len(separated) > 0:
-        return " ".join(separated)
+        new_string = " ".join(separated)
     else:
-        return string
+        new_string = string
+    if capitalize:
+        new_string = new_string.capitalize()
+    return new_string
 
 
 @contextmanager

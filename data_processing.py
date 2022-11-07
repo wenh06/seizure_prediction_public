@@ -44,7 +44,7 @@ __all__ = [
 ]
 
 
-_DATA_FP = DEFAULTS.DATA_DIR / "胶质瘤20220609.xlsx"  # not included in this repo.
+_DATA_FP = DEFAULTS.DATA_DIR / "胶质瘤20220609.xlsx"
 
 
 def load_raw_data(data_fp: Optional[Union[str, Path]] = None) -> pd.DataFrame:
@@ -309,7 +309,7 @@ def get_features(
         feature_list = feature_cols
 
     # check nan cells in the refined data
-    if df_refined.isnull().values.any():
+    if not kwargs.get("allow_missing", False) and df_refined.isnull().values.any():
         err = {
             row_idx
             + 1: [c for c in df_refined.columns if pd.isnull(df_refined[c][row_idx])]
@@ -387,6 +387,7 @@ def get_training_data(
         feature_config = deepcopy(FeatureConfig)
         feature_config.update(_feature_config)
 
+    assert kwargs.get("inference", False) is False, "inference mode is not supported"
     df_refined, feature_cols = get_features(
         preprocess_config,
         feature_config,
@@ -394,6 +395,7 @@ def get_training_data(
         feature_list,
         data,
         ensure_y=True,
+        **kwargs,
     )
     feature_list = feature_cols
 

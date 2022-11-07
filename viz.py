@@ -21,7 +21,7 @@ from data_processing import load_raw_data
 from grid_search import gather_grid_search_results
 from feature_selection import FeatureSelector
 from risk_diff import gen_seizure_risk_diff_TDSB_ext
-from utils import list_sum
+from utils import list_sum, separate_by_capital_letters
 
 
 __all__ = [
@@ -344,10 +344,19 @@ def plot_feature_permutation_importance(
         feature_list = np.append(np.array(feature_list)[mask], tmp_features)
 
     if zh2en:
+        zh2en_mapping = {
+            k: separate_by_capital_letters(v, capitalize=True, drop=["cate"])
+            for k, v in DataPreprocessConfig.zh2en_mapping.items()
+        }
+        zh2en_mapping.update(
+            {
+                "病理分级": "WHO grade",
+            }
+        )
         feature_list = [
-            DataPreprocessConfig.zh2en_mapping[item].replace("_", "-")
-            if not item.startswith("BIO")
-            else item
+            zh2en_mapping[item].replace("_", "-")
+            if not item.startswith("BIO_")
+            else item.replace("BIO_", "")
             for item in feature_list
         ]
 
@@ -536,6 +545,7 @@ def plot_grid_search_agg_boxplot(
 def plot_seizure_risk_difference(
     seizure_risk_dict: Optional[dict] = None,
     comorbidity_type: int = 0,
+    biomarker_type: int = 0,
     zh2en: bool = True,
 ) -> Tuple[plt.Figure, plt.Axes]:
     """
@@ -552,6 +562,10 @@ def plot_seizure_risk_difference(
         The manifistation of type of the comorbidity variables.
         0 for comparison of "Yes" and "No" for each comorbidity variable.
         1 for comparisons for the positive part of each comorbidity variable.
+    biomarker_type: int, default 0,
+        the manifistation of type of the biomarker variables.
+        0 for merging the classes other than "-" into one class.
+        1 for keeping the classes other than "-" as they are.
     zh2en: bool, default True,
         If True, convert the feature names from Chinese to English.
 
@@ -570,11 +584,11 @@ def plot_seizure_risk_difference(
 
     mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set_style("white")
-    plt.rcParams["xtick.labelsize"] = 18
-    plt.rcParams["ytick.labelsize"] = 18
-    plt.rcParams["axes.labelsize"] = 24
-    plt.rcParams["legend.fontsize"] = 20
-    plt.rcParams["legend.title_fontsize"] = 22
+    plt.rcParams["xtick.labelsize"] = 16
+    plt.rcParams["ytick.labelsize"] = 16
+    plt.rcParams["axes.labelsize"] = 22
+    plt.rcParams["legend.fontsize"] = 18
+    plt.rcParams["legend.title_fontsize"] = 20
     mpl.use("pgf")  # stwich backend to pgf
     plt.rcParams.update(
         {
@@ -620,10 +634,10 @@ def plot_seizure_risk_difference(
         [
             [
                 group_sep,
-                r"\textbf{" + k.replace("_", r"\_").replace(" ", "~") + r"}",
+                r"\smaller[1]\textbf{" + k.replace("_", r"\_").replace(" ", "~") + r"}",
             ]
             + [
-                r"\smaller[1]\textbf{"
+                r"\smaller[2]\textbf{"
                 + key.replace("~", r"$\mathbf{\sim}$")
                 .replace("<=", r"$\mathbf{\leqslant}$")
                 .replace(">=", r"$\mathbf{\geqslant}$ ")
@@ -832,10 +846,19 @@ def plot_shap_summary(
     fig_beeswarm, _ = plt.subplots()
     fig_beeswarm = plt.gcf()
     if zh2en:
+        zh2en_mapping = {
+            k: separate_by_capital_letters(v, capitalize=True, drop=["cate"])
+            for k, v in DataPreprocessConfig.zh2en_mapping.items()
+        }
+        zh2en_mapping.update(
+            {
+                "病理分级": "WHO grade",
+            }
+        )
         feature_list = [
-            DataPreprocessConfig.zh2en_mapping[item].replace("_", "-")
-            if not item.startswith("BIO")
-            else item
+            zh2en_mapping[item].replace("_ ", "-")
+            if not item.startswith("BIO_")
+            else item.replace("BIO_", "")
             for item in feature_list
         ]
     shap.summary_plot(

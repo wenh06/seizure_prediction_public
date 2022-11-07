@@ -6,6 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Union, Optional
 
+import numpy as np
 import pandas as pd
 from diff_binom_confint import (
     compute_confidence_interval,
@@ -25,6 +26,7 @@ __all__ = ["gen_seizure_risk_diff_TDSB_ext"]
 
 
 _CONFINT_METHOD = "wilson"
+_BIO_na_fillvalue = "NA"
 
 
 def gen_seizure_risk_diff_TDSB_ext(
@@ -32,6 +34,7 @@ def gen_seizure_risk_diff_TDSB_ext(
     return_type: str = "pd",
     zh2en: bool = True,
     comorbidity_type: int = 0,
+    biomarker_type: int = 0,
     overwrite: bool = False,
 ) -> Union[pd.DataFrame, str, dict]:
     """
@@ -50,6 +53,10 @@ def gen_seizure_risk_diff_TDSB_ext(
         the manifistation of type of the comorbidity variables.
         0 for comparison of "Yes" and "No" for each comorbidity variable.
         1 for comparisons for the positive part of each comorbidity variable.
+    biomarker_type: int, default 0,
+        the manifistation of type of the biomarker variables.
+        0 for merging the classes other than "-" into one class.
+        1 for keeping the classes other than "-" as they are.
     overwrite: bool, default False,
         Whether to overwrite the existing saved files.
 
@@ -60,15 +67,16 @@ def gen_seizure_risk_diff_TDSB_ext(
 
     """
     zh2en_mapping = {
-        k: separate_by_capital_letters(v).replace("Cate ", "")
+        k: separate_by_capital_letters(v, capitalize=True, drop=["cate"])
         for k, v in DataPreprocessConfig.zh2en_mapping.items()
     }
     zh2en_mapping.update(
         {
-            "WHOI级": "WHO Grade I",
-            "WHOII级": "WHO Grade II",
-            "WHOIII级": "WHO Grade III",
-            "WHOIV级": "WHO Grade IV",
+            "病理分级": "WHO grade",
+            "WHOI级": "WHO grade I",
+            "WHOII级": "WHO grade II",
+            "WHOIII级": "WHO grade III",
+            "WHOIV级": "WHO grade IV",
         }
     )
     Ref_indicator = " (Ref.)"
@@ -77,6 +85,7 @@ def gen_seizure_risk_diff_TDSB_ext(
         feature_config=dict(over_sampler=None, BIO_na_strategy="keep"),
         feature_set="TDSB_ext",
         return_dtype="pd",
+        allow_missing=True,
     )
     df_data = pd.concat((df_train, df_test))
 
@@ -317,8 +326,8 @@ def gen_seizure_risk_diff_TDSB_ext(
         ].sum()
         for tumor_zone in tumor_zones
     }
-    rows.append(["Tumor Zone", "", "", "", "", "", "", ""])
-    ret_dict["Tumor Zone"] = {}
+    rows.append(["肿瘤分区", "", "", "", "", "", "", ""])
+    ret_dict["肿瘤分区"] = {}
     for tumor_zone in tumor_zones:
         seizure_risk_confint = compute_confidence_interval(
             n_positive[tumor_zone],
@@ -346,7 +355,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                 else "REF",
             ]
         )
-        ret_dict["Tumor Zone"][
+        ret_dict["肿瘤分区"][
             tumor_zone + (Ref_indicator if tumor_zone == ref_group else "")
         ] = {
             "Affected": {
@@ -399,8 +408,8 @@ def gen_seizure_risk_diff_TDSB_ext(
         positive_class=1,
         negative_class=0,
     )
-    rows.append(["WHO Grade", "", "", "", "", "", "", ""])
-    ret_dict["WHO Grade"] = {}
+    rows.append(["病理分级", "", "", "", "", "", "", ""])
+    ret_dict["病理分级"] = {}
     for who_grade in ["WHOI级", "WHOII级", "WHOIII级", "WHOIV级"]:
         rows.append(
             [
@@ -416,7 +425,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                 else "REF",
             ]
         )
-        ret_dict["WHO Grade"][
+        ret_dict["病理分级"][
             str(who_grade) + (Ref_indicator if who_grade == ref_group else "")
         ] = {
             "Affected": {
@@ -759,7 +768,7 @@ def gen_seizure_risk_diff_TDSB_ext(
     inv_dict = {v: k for k, v in DataPreprocessConfig.x_col_mappings.手术切除方式.items()}
 
     def _simplify_surgical(x: str) -> str:
-        return x if x == "全切" else "其它"
+        return x if x == "全切" else "其它切除方式"
 
     df_data.loc[:, "手术切除方式"] = df_data.手术切除方式.map(inv_dict).apply(_simplify_surgical)
     df_train.loc[:, "手术切除方式"] = df_train.手术切除方式.map(inv_dict).apply(_simplify_surgical)
@@ -791,7 +800,7 @@ def gen_seizure_risk_diff_TDSB_ext(
     rows.append(["手术切除方式", "", "", "", "", "", "", ""])
     ret_dict["手术切除方式"] = {}
     # for resection_method in ["部分切除", "大部切除", "次全切", "近全切", "全切"]:
-    for resection_method in ["全切", "其它"]:
+    for resection_method in ["全切", "其它切除方式"]:
         rows.append(
             [
                 "",
@@ -907,15 +916,31 @@ def gen_seizure_risk_diff_TDSB_ext(
             },
         }
 
+    def _simplify_BIO(x: str) -> str:
+        return x if x in ["-", DataPreprocessConfig.BIO_na_fillvalue] else "+"
+
     # BIO
     ref_group = "-"
-    bio_levels = ["-", "±", "+", "++", "+++", DataPreprocessConfig.BIO_na_fillvalue]
     inv_dict = {v: k for k, v in DataPreprocessConfig.BIO_mapping.items()}
     # for col in DataPreprocessConfig.BIO_cate_var:
-    for col in ["BIO_IDH1-R132"]:
+    for col in ["BIO_IDH1-R132"]:  # categorical biomarker variables
         df_data.loc[:, col] = df_data[col].map(inv_dict)
         df_train.loc[:, col] = df_train[col].map(inv_dict)
         df_test.loc[:, col] = df_test[col].map(inv_dict)
+        if biomarker_type == 0:
+            df_data.loc[:, col] = df_data[col].apply(_simplify_BIO)
+            df_train.loc[:, col] = df_train[col].apply(_simplify_BIO)
+            df_test.loc[:, col] = df_test[col].apply(_simplify_BIO)
+            bio_levels = ["-", "+", DataPreprocessConfig.BIO_na_fillvalue]
+        else:
+            bio_levels = [
+                "-",
+                "±",
+                "+",
+                "++",
+                "+++",
+                DataPreprocessConfig.BIO_na_fillvalue,
+            ]
         n_affected = {
             bio: {
                 "total": df_data[df_data[col] == bio].shape[0],
@@ -928,8 +953,8 @@ def gen_seizure_risk_diff_TDSB_ext(
             bio: df_data[df_data[col] == bio][DataPreprocessConfig.y_col].sum()
             for bio in bio_levels
         }
-        rows.append([col, "", "", "", "", "", "", ""])
-        ret_dict[col] = {}
+        rows.append([col.replace("BIO_", ""), "", "", "", "", "", "", ""])
+        ret_dict[col.replace("BIO_", "")] = {}
         for bio in bio_levels:
             if n_affected[bio]["total"] == 0:
                 continue
@@ -946,7 +971,9 @@ def gen_seizure_risk_diff_TDSB_ext(
             rows.append(
                 [
                     "",
-                    bio.replace(DataPreprocessConfig.BIO_na_fillvalue, "NA"),
+                    bio.replace(
+                        DataPreprocessConfig.BIO_na_fillvalue, _BIO_na_fillvalue
+                    ),
                     f"{n_affected[bio]['total']}",
                     f"{n_affected[bio]['total'] / len(df_data):.1%}",
                     f"{n_affected[bio]['train']}/{n_affected[bio]['test']}",
@@ -957,9 +984,102 @@ def gen_seizure_risk_diff_TDSB_ext(
                     else "REF",
                 ]
             )
-            ret_dict[col][
-                bio.replace(DataPreprocessConfig.BIO_na_fillvalue, "NA")
+            ret_dict[col.replace("BIO_", "")][
+                bio.replace(DataPreprocessConfig.BIO_na_fillvalue, _BIO_na_fillvalue)
                 + (Ref_indicator if bio == ref_group else "")
+            ] = {
+                "Affected": {
+                    "n": n_affected[bio]["total"],
+                    "percent": n_affected[bio]["total"] / len(df_data),
+                    "t/v": f"{n_affected[bio]['train']}/{n_affected[bio]['test']}",
+                },
+                "seiuzre_risk": {
+                    "n": n_positive[bio],
+                    "percent": n_positive[bio] / n_affected[bio]["total"],
+                    "confidence_interval": seizure_risk_confint,
+                },
+                "seizure_risk_difference": {
+                    "risk_difference": (
+                        n_positive[bio] / n_affected[bio]["total"]
+                        - n_positive[ref_group] / n_affected[ref_group]["total"]
+                    )
+                    if bio != ref_group
+                    else 0,
+                    "confidence_interval": seizure_risk_diff_confint
+                    if bio != ref_group
+                    else (0, 0),
+                },
+            }
+
+    split_values = [10, 30, 60]
+    bio_levels = (
+        [f"<= {split_values[0]}%"]
+        + [
+            f"{split_values[i-1]}% - {split_values[i]}%"
+            for i in range(1, len(split_values))
+        ]
+        + [f"> {split_values[-1]}%"]
+        + [_BIO_na_fillvalue]
+    )
+    ref_group = bio_levels[0]
+
+    def _BIO_categorizer(x: float) -> str:
+        if np.isnan(x):
+            return _BIO_na_fillvalue
+        if x <= split_values[0]:
+            return f"<= {split_values[0]}%"
+        for i in range(len(split_values) - 1):
+            if split_values[i] < x <= split_values[i + 1]:
+                return f"{split_values[i]}% - {split_values[i+1]}%"
+        return f"> {split_values[-1]}%"
+
+    for col in ["BIO_Ki-67"]:  # continuous biomarker variables
+        df_data.loc[:, col] = df_data[col].apply(_BIO_categorizer)
+        df_train.loc[:, col] = df_train[col].apply(_BIO_categorizer)
+        df_test.loc[:, col] = df_test[col].apply(_BIO_categorizer)
+        n_affected = {
+            bio: {
+                "total": df_data[df_data[col] == bio].shape[0],
+                "train": df_train[df_train[col] == bio].shape[0],
+                "test": df_test[df_test[col] == bio].shape[0],
+            }
+            for bio in bio_levels
+        }
+        n_positive = {
+            bio: df_data[df_data[col] == bio][DataPreprocessConfig.y_col].sum()
+            for bio in bio_levels
+        }
+        rows.append([col.replace("BIO_", ""), "", "", "", "", "", "", ""])
+        ret_dict[col.replace("BIO_", "")] = {}
+        for bio in bio_levels:
+            if n_affected[bio]["total"] == 0:
+                continue
+            seizure_risk_confint = compute_confidence_interval(
+                n_positive[bio], n_affected[bio]["total"], method=_CONFINT_METHOD
+            ).astuple()
+            seizure_risk_diff_confint = compute_difference_confidence_interval(
+                n_positive[bio],
+                n_affected[bio]["total"],
+                n_positive[ref_group],
+                n_affected[ref_group]["total"],
+                method=_CONFINT_METHOD,
+            ).astuple()
+            rows.append(
+                [
+                    "",
+                    bio,
+                    f"{n_affected[bio]['total']}",
+                    f"{n_affected[bio]['total'] / len(df_data):.1%}",
+                    f"{n_affected[bio]['train']}/{n_affected[bio]['test']}",
+                    f"{n_positive[bio]}",
+                    f"{n_positive[bio] / n_affected[bio]['total']:.1%} (from {seizure_risk_confint[0]:.1%} to {seizure_risk_confint[1]:.1%})",
+                    f"{n_positive[bio] / n_affected[bio]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
+                    if bio != ref_group
+                    else "REF",
+                ]
+            )
+            ret_dict[col.replace("BIO_", "")][
+                bio + (Ref_indicator if bio == ref_group else "")
             ] = {
                 "Affected": {
                     "n": n_affected[bio]["total"],
@@ -988,7 +1108,9 @@ def gen_seizure_risk_diff_TDSB_ext(
         for row_idx, row in enumerate(rows):
             for item_idx, item in enumerate(row):
                 if item in zh2en_mapping:
-                    rows[row_idx][item_idx] = zh2en_mapping[item]
+                    rows[row_idx][item_idx] = (
+                        zh2en_mapping[item].replace("Of", "of").replace("Or", "or")
+                    )
         _tmp_dict = deepcopy(ret_dict)
         ret_dict = {}
         for k, v in _tmp_dict.items():
@@ -996,7 +1118,11 @@ def gen_seizure_risk_diff_TDSB_ext(
             ret_dict[new_k] = {}
             for key, val in v.items():
                 if key.replace(Ref_indicator, "") in zh2en_mapping:
-                    new_key = zh2en_mapping[key.replace(Ref_indicator, "")]
+                    new_key = (
+                        zh2en_mapping[key.replace(Ref_indicator, "")]
+                        .replace("Of", "of")
+                        .replace("Or", "or")
+                    )
                     if Ref_indicator in key:
                         new_key = new_key + Ref_indicator
                     ret_dict[new_k][new_key] = val
