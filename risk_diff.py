@@ -540,7 +540,6 @@ def gen_seizure_risk_diff_TDSB_ext(
         "高氯血症",
         "低氯血症",
         "中枢神经感染",
-        "脑积水",
         "凝血功能异常",
     ]
     prefix = "合并症_"
@@ -692,76 +691,6 @@ def gen_seizure_risk_diff_TDSB_ext(
                 }
     else:
         raise ValueError("comorbidity_type should be 0 or 1")
-
-    # complication infection
-    # ref_group = 0
-    # n_affected = {
-    #     complication: {
-    #         "total": df_data[df_data.并发症感染 == complication].shape[0],
-    #         "train": df_train[df_train.并发症感染 == complication].shape[0],
-    #         "test": df_test[df_test.并发症感染 == complication].shape[0],
-    #     }
-    #     for complication in df_data.并发症感染.unique()
-    # }
-    # n_positive = {
-    #     complication: df_data[df_data.并发症感染 == complication][
-    #         DataPreprocessConfig.y_col
-    #     ].sum()
-    #     for complication in df_data.并发症感染.unique()
-    # }
-    # seizure_risk = get_seizure_risk(
-    #     df_data=df_data, col="并发症感染", positive_class=1, negative_class=0
-    # )
-    # seizure_risk_diff = get_seizure_risk_difference(
-    #     df_data=df_data,
-    #     col="并发症感染",
-    #     ref_class=ref_group,
-    #     positive_class=1,
-    #     negative_class=0,
-    # )
-    # rows.append(["并发症感染", "", "", "", "", "", "", ""])
-    # ret_dict["并发症感染"] = {}
-    # for complication in [0, 1]:
-    #     rows.append(
-    #         [
-    #             "",
-    #             complication,
-    #             f"{n_affected[complication]['total']}",
-    #             f"{n_affected[complication]['total'] / len(df_data):.1%}",
-    #             f"{n_affected[complication]['train']}/{n_affected[complication]['test']}",
-    #             f"{n_positive[complication]}",
-    #             f"{seizure_risk[complication]['risk']:.1%} (from {seizure_risk[complication]['confidence_interval'][0]:.1%} to {seizure_risk[complication]['confidence_interval'][1]:.1%})",
-    #             f"{seizure_risk_diff[complication]['risk_difference']:.1%} (from {seizure_risk_diff[complication]['confidence_interval'][0]:.1%} to {seizure_risk_diff[complication]['confidence_interval'][1]:.1%})"
-    #             if complication != ref_group
-    #             else "REF",
-    #         ]
-    #     )
-    #     ret_dict["并发症感染"][
-    #         str(complication) + (Ref_indicator if complication == ref_group else "")
-    #     ] = {
-    #         "Affected": {
-    #             "n": n_affected[complication]["total"],
-    #             "percent": n_affected[complication]["total"] / len(df_data),
-    #             "t/v": f"{n_affected[complication]['train']}/{n_affected[complication]['test']}",
-    #         },
-    #         "seiuzre_risk": {
-    #             "n": n_positive[complication],
-    #             "percent": seizure_risk[complication]["risk"],
-    #             "confidence_interval": seizure_risk[complication][
-    #                 "confidence_interval"
-    #             ],
-    #         },
-    #         "seizure_risk_difference": {
-    #             "risk_difference": seizure_risk_diff[complication]["risk_difference"]
-    #             if complication != ref_group
-    #             else 0,
-    #             "confidence_interval": seizure_risk_diff[complication][
-    #                 "confidence_interval"
-    #             ]
-    #             if complication != ref_group
-    #             else (0, 0),
-    #         },
-    #     }
 
     # surgical resection method
     ref_group = "全切"  # "部分切除"

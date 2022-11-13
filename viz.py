@@ -433,7 +433,7 @@ def plot_roc_curve(
     elif isinstance(estimator_names, str):
         estimator_names = [estimator_names]
     assert len(estimators) == len(estimator_names)
-    kwargs["linewidth"] = kwargs.get("linewidth", 4)
+    kwargs["linewidth"] = kwargs.get("linewidth", 2.5)
     plot_tuples = []
     for idx, estimator in enumerate(estimators):
         name = estimator_names[idx]
@@ -454,7 +454,7 @@ def plot_roc_curve(
     for fpr, tpr, auc_score, name in plot_tuples:
         ax.plot(fpr, tpr, label=f"{name} (AUC = {auc_score:.3f})", **kwargs)
 
-    ax.plot([0, 1], [0, 1], ls=":", lw=2, c="k")
+    ax.plot([0, 1], [0, 1], ls=":", lw=1.5, c="k")
 
     xlabel = "False Positive Rate"
     ylabel = "True Positive Rate"
@@ -837,6 +837,9 @@ def plot_shap_summary(
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
+    row_height = 0.4
+    fig_height = min(max_display, len(feature_list)) * row_height + 1.5
+
     if class_idx is None:
         shap_values_ = shap_values
     else:
@@ -867,6 +870,7 @@ def plot_shap_summary(
         feature_names=feature_list,
         show=False,
         max_display=min(max_display, len(feature_list)),
+        plot_size=(16, fig_height),
         **kwargs,
     )
     fig_violin, _ = plt.subplots()
@@ -878,6 +882,7 @@ def plot_shap_summary(
         show=False,
         plot_type="violin",
         max_display=min(max_display, len(feature_list)),
+        plot_size=(8, fig_height),  # default width is 8
         **kwargs,
     )
     fig_bar, _ = plt.subplots()
@@ -889,6 +894,7 @@ def plot_shap_summary(
         show=False,
         plot_type="bar",
         max_display=min(max_display, len(feature_list)),
+        plot_size=(8, fig_height),  # default width is 8
         **kwargs,
     )
     figs = {"dot": fig_beeswarm, "violin": fig_violin, "bar": fig_bar}
