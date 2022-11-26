@@ -862,7 +862,7 @@ def plot_shap_summary(
             }
         )
         feature_list = [
-            zh2en_mapping[item].replace("_ ", "-").replace("(cm)", "")
+            zh2en_mapping[item].replace("_ ", "-").replace(" (cm)", "")
             if not item.startswith("BIO_")
             else item.replace("BIO_", "")
             for item in feature_list
