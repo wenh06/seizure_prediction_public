@@ -354,7 +354,7 @@ def plot_feature_permutation_importance(
             }
         )
         feature_list = [
-            zh2en_mapping[item].replace("_", "-")
+            zh2en_mapping[item].replace("_", "-").replace(" (cm)", "")
             if not item.startswith("BIO_")
             else item.replace("BIO_", "")
             for item in feature_list
@@ -837,6 +837,9 @@ def plot_shap_summary(
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
+    # remove prefixes of "合并症_"
+    feature_list = [f.replace("合并症_", "") for f in feature_list]
+
     row_height = 0.4
     fig_height = min(max_display, len(feature_list)) * row_height + 1.5
 
@@ -859,7 +862,7 @@ def plot_shap_summary(
             }
         )
         feature_list = [
-            zh2en_mapping[item].replace("_ ", "-")
+            zh2en_mapping[item].replace("_ ", "-").replace("(cm)", "")
             if not item.startswith("BIO_")
             else item.replace("BIO_", "")
             for item in feature_list
