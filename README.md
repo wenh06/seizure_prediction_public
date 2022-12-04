@@ -9,9 +9,9 @@ This is a copy of a private repository, but **without** the raw data and trained
 <details>
 <summary>Click to expand!</summary>
 
-  Age distribution         |  Sex distribution
+  Age distribution         |  Gender distribution
 :-------------------------:|:-------------------------:
-![Age distribution](images/age_distribution.svg) | ![Sex distribution](images/sex_distribution.svg)
+![Age distribution](images/age_distribution.svg) | ![Gender distribution](images/sex_distribution.svg)
 
 :point_right: [Back to top](#seizure_prediction)
 
@@ -26,6 +26,17 @@ This is a copy of a private repository, but **without** the raw data and trained
 - Bagging classifier
 - Gradient boosting classifier
 - XGBoost classifier
+
+### ROC of one typical experiment
+
+<details>
+<summary>Click to expand!</summary>
+
+<img src="./images/roc_curve_example_no_over_sampling.svg" alt="ROC" width=600>
+
+:point_right: [Back to top](#seizure_prediction)
+
+</details>
 
 ## Grid search
 
