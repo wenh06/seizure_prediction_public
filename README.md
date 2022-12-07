@@ -4,6 +4,8 @@ Seizure prediction using clinical data.
 
 This is a copy of a private repository, but **without** the raw data and trained models.
 
+[Visualization](images) were done using functions in [`viz.py`](viz.py)
+
 ## Data distribution
 
 <details>
