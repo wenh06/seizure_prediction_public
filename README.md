@@ -6,6 +6,8 @@ This is a copy of a private repository, but **without** the raw data and trained
 
 [Visualization](images) were done using functions in [`viz.py`](viz.py)
 
+Risk differences analysis were performed with [`diff-binom-confint`](https://pypi.org/project/diff-binom-confint/), which is also hosted on [Github](https://github.com/DeepPSP/DBCI/).
+
 ## Data distribution
 
 <details>
