@@ -82,6 +82,7 @@ def parse_args() -> dict:
     parser.add_argument(
         "--ip",
         type=str,
+        default="0.0.0.0",
         help="IP address",
         dest="ip",
     )
