@@ -1,5 +1,7 @@
 FROM python:3.8-slim
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 ARG serving=true
 ARG torch=false
 
@@ -15,7 +17,7 @@ RUN apt install ffmpeg libsm6 libxext6 tar unzip wget vim nano -y
 RUN ln -s /usr/bin/python3 /usr/bin/python && ln -s /usr/bin/pip3 /usr/bin/pip
 # RUN pip install --upgrade pip
 
-RUN if [ "$torch" = "true" ] ; then pip install torch==1.10.0 ; fi
+RUN if [ "$torch" = "true" ] ; then pip install torch==2.0.1 ; fi
 
 RUN mkdir /seizure_prediction
 COPY ./requirements.txt /seizure_prediction

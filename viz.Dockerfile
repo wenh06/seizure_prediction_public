@@ -1,6 +1,8 @@
 FROM texlive:latest-small
 # base image python version >= 3.10.7
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 ARG torch=false
 
 ## The MAINTAINER instruction sets the author field of the generated images.
@@ -19,7 +21,7 @@ RUN tlmgr install relsize xecjk
 RUN ln -s /usr/bin/python3 /usr/bin/python && ln -s /usr/bin/pip3 /usr/bin/pip
 # RUN pip install --upgrade pip
 
-RUN if [ "$torch" = "true" ] ; then pip install torch==1.10.0 ; fi
+RUN if [ "$torch" = "true" ] ; then pip install torch==2.0.1 ; fi
 
 RUN mkdir /seizure_prediction
 COPY ./requirements.txt /seizure_prediction
