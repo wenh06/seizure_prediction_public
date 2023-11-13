@@ -4,13 +4,12 @@ Adapted from: [torch_ecg](https://github.com/DeepPSP/torch_ecg/blob/master/torch
 """
 
 import warnings
-from typing import Dict, Optional, Tuple, Union, Callable, Sequence
+from typing import Callable, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from sklearn.metrics import roc_auc_score
 
 from utils import add_docstring
-
 
 __all__ = [
     "confusion_matrix",
@@ -181,9 +180,7 @@ def metrics_from_confusion_matrix(
     # NOTE: never use repeat here, because it will cause bugs
     # sens, spec, prec, npv, jac, acc, phi = list(repeat(np.zeros(num_classes), 7))
     sens, spec, prec, npv, jac, acc, phi = [np.zeros(num_classes) for _ in range(7)]
-    auroc = np.zeros(
-        num_classes
-    )  # area under the receiver-operater characteristic curve (ROC AUC)
+    auroc = np.zeros(num_classes)  # area under the receiver-operater characteristic curve (ROC AUC)
     auprc = np.zeros(num_classes)  # area under the precision-recall curve
     for k in range(num_classes):
         tp, fp, fn, tn = (
@@ -213,9 +210,7 @@ def metrics_from_confusion_matrix(
         else:
             jac[k] = float("nan")
         acc[k] = (tp + tn) / num_samples
-        phi[k] = (tp * tn - fp * fn) / np.sqrt(
-            (tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)
-        )
+        phi[k] = (tp * tn - fp * fn) / np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
 
         thresholds = np.unique(outputs[:, k])
         thresholds = np.append(thresholds, thresholds[-1] + 1)
@@ -322,18 +317,12 @@ def metrics_from_confusion_matrix(
         "auprc",  # area under the precision-recall curve
     ]:
         metrics[m.strip("_")] = eval(m)
-        metrics[f"macro_{m}".strip("_")] = (
-            np.nanmean(eval(m) * _weights)
-            if np.any(np.isfinite(eval(m)))
-            else float("nan")
-        )
+        metrics[f"macro_{m}".strip("_")] = np.nanmean(eval(m) * _weights) if np.any(np.isfinite(eval(m))) else float("nan")
     return metrics
 
 
 @add_docstring(
-    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(
-        metric="F1-measure", metrics="F1-measures"
-    ),
+    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(metric="F1-measure", metrics="F1-measures"),
     "prepend",
 )
 def f_measure(
@@ -357,9 +346,7 @@ def f_measure(
 
 
 @add_docstring(
-    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(
-        metric="sensitivity", metrics="sensitivities"
-    ),
+    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(metric="sensitivity", metrics="sensitivities"),
     "prepend",
 )
 def sensitivity(
@@ -389,9 +376,7 @@ hit_rate = sensitivity
 
 
 @add_docstring(
-    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(
-        metric="precision", metrics="precisions"
-    ),
+    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(metric="precision", metrics="precisions"),
     "prepend",
 )
 def precision(
@@ -419,9 +404,7 @@ positive_predictive_value = precision
 
 
 @add_docstring(
-    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(
-        metric="specificity", metrics="specificities"
-    ),
+    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(metric="specificity", metrics="specificities"),
     "prepend",
 )
 def specificity(
@@ -450,9 +433,7 @@ true_negative_rate = specificity
 
 
 @add_docstring(
-    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(
-        metric="AUROC and macro AUPRC", metrics="AUPRCs, AUPRCs"
-    ),
+    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(metric="AUROC and macro AUPRC", metrics="AUPRCs, AUPRCs"),
     "prepend",
 )
 def auc(
@@ -480,9 +461,7 @@ def auc(
 
 
 @add_docstring(
-    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(
-        metric="accuracy", metrics="accuracies"
-    ),
+    _METRICS_FROM_CONFUSION_MATRIX_PARAMS.format(metric="accuracy", metrics="accuracies"),
     "prepend",
 )
 def accuracy(
@@ -621,18 +600,14 @@ class ClassificationMetrics:
         """ """
         self._cm = confusion_matrix(labels, outputs, num_classes)
         self._cm_ovr = ovr_confusion_matrix(labels, outputs, num_classes)
-        self._metrics = metrics_from_confusion_matrix(
-            labels, outputs, num_classes, weights
-        )
+        self._metrics = metrics_from_confusion_matrix(labels, outputs, num_classes, weights)
         if self._extra_metrics is not None:
             self._em = self._extra_metrics(labels, outputs, num_classes, weights)
             self._metrics.update(self._em)
 
         return self
 
-    compute.__doc__ = metrics_from_confusion_matrix.__doc__.replace(
-        "metrics: dict,", f"{__name__},"
-    ).replace(
+    compute.__doc__ = metrics_from_confusion_matrix.__doc__.replace("metrics: dict,", f"{__name__},").replace(
         "metrics = metrics_from_confusion_matrix(labels, outputs)",
         """metrics = ClassificationMetrics()
     >>> metrics = metrics.compute(labels, outputs)
@@ -824,15 +799,11 @@ class SeizureClassificationMetrics(ClassificationMetrics):
         self.subset = subset
         super().__init__(multi_label=False, macro=False)
 
-    def __call__(
-        self, y_true: np.ndarray, y_prob: np.ndarray, thr: float
-    ) -> Dict[str, float]:
+    def __call__(self, y_true: np.ndarray, y_prob: np.ndarray, thr: float) -> Dict[str, float]:
         """ """
         assert y_true.ndim == 1, "y_true must be 1D"
         if y_prob.ndim == 1:
-            assert (
-                y_prob.shape[0] == y_true.shape[0]
-            ), "labels and probabilities must have the same length"
+            assert y_prob.shape[0] == y_true.shape[0], "labels and probabilities must have the same length"
             y_pred = (y_prob > thr).astype(int)
         elif y_prob.ndim == 2:
             assert y_prob.shape == (
@@ -849,11 +820,7 @@ class SeizureClassificationMetrics(ClassificationMetrics):
 
         super().__call__(y_true, y_pred, num_classes=2)
 
-        metrics = {
-            k: v[self.positive_class]
-            for k, v in self._metrics.items()
-            if not k.startswith("macro_")
-        }
+        metrics = {k: v[self.positive_class] for k, v in self._metrics.items() if not k.startswith("macro_")}
         # use the AUC score computed from roc_auc_score from sklearn
         metrics.pop("auroc")
         metrics.pop("auprc")
@@ -862,8 +829,6 @@ class SeizureClassificationMetrics(ClassificationMetrics):
         if self.subset is not None:
             metrics = {k: v for k, v in metrics.items() if k in self.subset}
             if set(self.subset) - set(metrics.keys()):
-                warnings.warn(
-                    f"Metrics {set(self.subset) - set(metrics.keys())} not available"
-                )
+                warnings.warn(f"Metrics {set(self.subset) - set(metrics.keys())} not available")
 
         return metrics

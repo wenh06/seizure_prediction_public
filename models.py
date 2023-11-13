@@ -5,25 +5,21 @@ import json
 import pickle
 import warnings
 from pathlib import Path
-from typing import Union, Optional, List, Any, Tuple, Dict, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
+from sklearn.ensemble import BaggingClassifier, GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
-from sklearn.ensemble import (
-    RandomForestClassifier,
-    GradientBoostingClassifier,
-    BaggingClassifier,
-)
 from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
 from config import CFG
-from utils import ReprMixin
-from metrics import SeizureClassificationMetrics
 from data_processing import get_features
+from metrics import SeizureClassificationMetrics
+from utils import ReprMixin
 
 try:
     from nn import SeizureMLP
@@ -130,9 +126,7 @@ def find_optimal_threshold(
     return thr, _full_cm(y_train, y_prob, thr)
 
 
-def _find_optimal_threshold(
-    y_train: np.ndarray, y_prob: np.ndarray, interval: Sequence[float], precision: int
-) -> float:
+def _find_optimal_threshold(y_train: np.ndarray, y_prob: np.ndarray, interval: Sequence[float], precision: int) -> float:
     """ """
     thresholds = np.linspace(
         interval[0],
@@ -141,9 +135,7 @@ def _find_optimal_threshold(
     )
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        scores = np.array(
-            [[v for k, v in _cm(y_train, y_prob, thr).items()] for thr in thresholds]
-        )
+        scores = np.array([[v for k, v in _cm(y_train, y_prob, thr).items()] for thr in thresholds])
     # the most balanced threshold
     _scores = scores.copy()
     _scores[(_scores < 0.5) | np.isnan(_scores)] = np.nan
@@ -198,17 +190,11 @@ class SeizurePredictionModel(ReprMixin):
         """ """
         return pickle.loads(Path(model_path).read_bytes())
 
-    def adjust_threshold(
-        self, X_train: np.ndarray, y_train: np.ndarray, precision: int = 3
-    ) -> None:
+    def adjust_threshold(self, X_train: np.ndarray, y_train: np.ndarray, precision: int = 3) -> None:
         """ """
-        self.thr = find_optimal_threshold(
-            self.model, X_train, y_train, precision=precision, return_metrics=False
-        )
+        self.thr = find_optimal_threshold(self.model, X_train, y_train, precision=precision, return_metrics=False)
 
-    def pipeline(
-        self, feed_data: Union[str, dict, Sequence[dict], pd.DataFrame]
-    ) -> List[Dict[str, Union[int, float]]]:
+    def pipeline(self, feed_data: Union[str, dict, Sequence[dict], pd.DataFrame]) -> List[Dict[str, Union[int, float]]]:
         """ """
         if isinstance(feed_data, str):
             feed_data = json.loads(feed_data)
@@ -230,13 +216,6 @@ class SeizurePredictionModel(ReprMixin):
         pred = (proba > self.thr).astype(int)
         # re-scale the probability
         # lagrangian polyn of (0,0), (1,1), (thr, 0.5)
-        proba = (
-            proba
-            * (self.thr * (proba - self.thr) + 0.5 * (1 - proba))
-            / self.thr
-            / (1 - self.thr)
-        )
-        ret = [
-            {"prediction": int(p), "probability": float(q)} for p, q in zip(pred, proba)
-        ]
+        proba = proba * (self.thr * (proba - self.thr) + 0.5 * (1 - proba)) / self.thr / (1 - self.thr)
+        ret = [{"prediction": int(p), "probability": float(q)} for p, q in zip(pred, proba)]
         return ret

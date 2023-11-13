@@ -5,15 +5,14 @@ import argparse
 import traceback  # noqa: F401
 import warnings
 from copy import deepcopy
-from pathlib import Path
 from datetime import datetime  # noqa: F401
+from pathlib import Path
 
 import yaml
-from flask import request, jsonify, Flask, Response
+from flask import Flask, Response, jsonify, request
 
 from config import ServingConfig
 from models import SeizurePredictionModel
-
 
 seizure_app = Flask(__name__)
 
@@ -103,9 +102,7 @@ def parse_args() -> dict:
         if not config_file_path.exists():
             raise FileNotFoundError(f"Config file {config_file_path} not found")
         if config_file_path.suffix not in [".yml", ".yaml"]:
-            raise ValueError(
-                f"Config file {config_file_path} must be a .yml or .yaml file"
-            )
+            raise ValueError(f"Config file {config_file_path} must be a .yml or .yaml file")
         serving_config = yaml.safe_load(config_file_path.read_text())
         _ServingConfig.update(serving_config)
 

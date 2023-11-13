@@ -1,12 +1,11 @@
 """
 """
 
-from typing import Union, Optional, Sequence
+from typing import Optional, Sequence, Union
 
 import torch.nn as nn
 
 from .utils import CLFMixin, SizeMixin, get_activation
-
 
 __all__ = ["SeizureMLP"]
 

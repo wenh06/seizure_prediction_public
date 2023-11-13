@@ -4,11 +4,10 @@
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
-from typing import MutableMapping, Any, Optional
+from typing import Any, MutableMapping, Optional
 
 import numpy as np
 from sklearn.model_selection import ParameterGrid
-
 
 __all__ = [
     "CFG",
@@ -60,10 +59,7 @@ class CFG(dict):
         # Class attributes
         exclude_fields = ["update", "pop"]
         for k in self.__class__.__dict__:
-            if (
-                not (k.startswith("__") and k.endswith("__"))
-                and k not in exclude_fields
-            ):
+            if not (k.startswith("__") and k.endswith("__")) and k not in exclude_fields:
                 setattr(self, k, getattr(self, k))
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -252,9 +248,7 @@ DataPreprocessConfig.BIO_cate_var = [
     "BIO_MMP-9",
     "BIO_H3K27M",
 ]
-DataPreprocessConfig.BIO_var = (
-    DataPreprocessConfig.BIO_cont_var + DataPreprocessConfig.BIO_cate_var
-)
+DataPreprocessConfig.BIO_var = DataPreprocessConfig.BIO_cont_var + DataPreprocessConfig.BIO_cate_var
 DataPreprocessConfig.BIO_na_fillvalue = " "
 
 DataPreprocessConfig.demographic_cont_var = [
@@ -264,10 +258,7 @@ DataPreprocessConfig.demographic_cate_var = [
     "性别",
     # "年龄段",
 ]
-DataPreprocessConfig.demographic_var = (
-    DataPreprocessConfig.demographic_cont_var
-    + DataPreprocessConfig.demographic_cate_var
-)
+DataPreprocessConfig.demographic_var = DataPreprocessConfig.demographic_cont_var + DataPreprocessConfig.demographic_cate_var
 
 DataPreprocessConfig.tumor_cate_var = [
     "肿瘤分区_颞",
@@ -291,9 +282,7 @@ DataPreprocessConfig.tumor_cate_var = [
 DataPreprocessConfig.tumor_cont_var = [
     # "肿瘤大小",
 ]
-DataPreprocessConfig.tumor_var = (
-    DataPreprocessConfig.tumor_cate_var + DataPreprocessConfig.tumor_cont_var
-)
+DataPreprocessConfig.tumor_var = DataPreprocessConfig.tumor_cate_var + DataPreprocessConfig.tumor_cont_var
 
 DataPreprocessConfig.comorbidity_var = [
     "合并症_低钠血症",
@@ -316,9 +305,7 @@ DataPreprocessConfig.surgery_cont_var = [
     # "肿瘤大小",
     # "出血量",
 ]
-DataPreprocessConfig.surgery_var = (
-    DataPreprocessConfig.surgery_cate_var + DataPreprocessConfig.surgery_cont_var
-)
+DataPreprocessConfig.surgery_var = DataPreprocessConfig.surgery_cate_var + DataPreprocessConfig.surgery_cont_var
 
 DataPreprocessConfig.medication_var = [
     "术后是否用药",
@@ -349,9 +336,7 @@ DataPreprocessConfig.continuous_var = (
     + DataPreprocessConfig.surgery_cont_var
 )
 
-DataPreprocessConfig.x_cols = (
-    DataPreprocessConfig.categorical_var + DataPreprocessConfig.continuous_var
-)
+DataPreprocessConfig.x_cols = DataPreprocessConfig.categorical_var + DataPreprocessConfig.continuous_var
 for item in [
     "年龄段",
     "并发症感染",
@@ -445,9 +430,7 @@ FeatureConfig = CFG()
 FeatureConfig.set_name = None
 FeatureConfig.feature_list = None
 FeatureConfig.sets = CFG()
-FeatureConfig.sets.TD = (
-    DataPreprocessConfig.tumor_var + DataPreprocessConfig.demographic_var
-)
+FeatureConfig.sets.TD = DataPreprocessConfig.tumor_var + DataPreprocessConfig.demographic_var
 FeatureConfig.sets.TDS = FeatureConfig.sets.TD + DataPreprocessConfig.surgery_var
 # FeatureConfig.sets.TDM = FeatureConfig.sets.TD + DataPreprocessConfig.medication_var
 # FeatureConfig.sets.TDSM = FeatureConfig.sets.TDS + DataPreprocessConfig.medication_var
@@ -456,9 +439,7 @@ FeatureConfig.sets.TDSB = FeatureConfig.sets.TDS + ["BIO_IDH1-R132"]
 FeatureConfig.sets.TDSB_ext = FeatureConfig.sets.TDS + DataPreprocessConfig.BIO_var
 # FeatureConfig.sets.TDMB = FeatureConfig.sets.TDM + ["BIO_IDH1-R132"]
 # FeatureConfig.sets.TDSMB = FeatureConfig.sets.TDSM + ["BIO_IDH1-R132"]
-FeatureConfig.BIO_na_strategy = (
-    "drop"  # "knn", "random_uniform", "random_distributional", "keep"
-)
+FeatureConfig.BIO_na_strategy = "drop"  # "knn", "random_uniform", "random_distributional", "keep"
 FeatureConfig.set_list = list(FeatureConfig.sets)
 
 FeatureConfig.binarize_variables = False

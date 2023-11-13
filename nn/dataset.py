@@ -3,7 +3,7 @@
 
 import warnings
 from copy import deepcopy
-from typing import Optional, List
+from typing import List, Optional
 
 import torch
 from torch.utils.data import TensorDataset
@@ -41,18 +41,18 @@ class SeizureDataset(TensorDataset, ReprMixin):
         self.feature_set = feature_set
         self.training = training
 
-        (X_train, y_train, X_test, y_test, self.__feature_list,) = get_training_data(
-            self.preprocess_config, self.feature_config, self.feature_set
-        )
+        (
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+            self.__feature_list,
+        ) = get_training_data(self.preprocess_config, self.feature_config, self.feature_set)
 
         if self.training:
-            super().__init__(
-                torch.from_numpy(X_train).float(), torch.from_numpy(y_train).long()
-            )
+            super().__init__(torch.from_numpy(X_train).float(), torch.from_numpy(y_train).long())
         else:
-            super().__init__(
-                torch.from_numpy(X_test).float(), torch.from_numpy(y_test).long()
-            )
+            super().__init__(torch.from_numpy(X_test).float(), torch.from_numpy(y_test).long())
 
     @property
     def feature_list(self) -> List[str]:

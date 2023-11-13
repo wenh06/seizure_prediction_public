@@ -2,27 +2,26 @@
 """
 
 from pathlib import Path
-from typing import Tuple, Sequence, Optional, Union, Any, Dict, List
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
+import matplotlib as mpl
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib import font_manager
 import seaborn as sns
-from sklearn.inspection import permutation_importance
-from sklearn.metrics import roc_curve, auc
-from sklearn.base import BaseEstimator
 import shap
+from matplotlib import font_manager
+from sklearn.base import BaseEstimator
+from sklearn.inspection import permutation_importance
+from sklearn.metrics import auc, roc_curve
 
 from config import DEFAULTS, DataPreprocessConfig
 from data_processing import load_raw_data
-from grid_search import gather_grid_search_results
 from feature_selection import FeatureSelector
+from grid_search import gather_grid_search_results
 from risk_diff import gen_seizure_risk_diff_TDSB_ext
 from utils import list_sum, separate_by_capital_letters
-
 
 __all__ = [
     "plot_age_distribution",
@@ -254,9 +253,7 @@ def plot_feature_importance(
     feature_list = clf.feature_config.feature_list
     if zh2en:
         feature_list = [
-            DataPreprocessConfig.zh2en_mapping[item].replace("_", "-")
-            if not item.startswith("BIO")
-            else item
+            DataPreprocessConfig.zh2en_mapping[item].replace("_", "-") if not item.startswith("BIO") else item
             for item in feature_list
         ]
     fig, ax = plt.subplots(figsize=(12, 0.5 * len(feature_list)))
@@ -324,12 +321,8 @@ def plot_feature_permutation_importance(
     importances_mean = perm_importance.importances_mean
 
     if merge_split_variables:
-        tumor_zone_inds = [
-            idx for idx, item in enumerate(feature_list) if item.startswith("肿瘤分区")
-        ]
-        comorbidity_inds = [
-            idx for idx, item in enumerate(feature_list) if item.startswith("合并症")
-        ]
+        tumor_zone_inds = [idx for idx, item in enumerate(feature_list) if item.startswith("肿瘤分区")]
+        comorbidity_inds = [idx for idx, item in enumerate(feature_list) if item.startswith("合并症")]
         mask = np.ones_like(importances_mean, dtype=bool)
         mask[tumor_zone_inds + comorbidity_inds] = False
         tmp_values, tmp_features = [], []
@@ -426,10 +419,7 @@ def plot_roc_curve(
     if isinstance(estimators, BaseEstimator):
         estimators = [estimators]
     if estimator_names is None:
-        estimator_names = [
-            estimator.__class__.__name__.replace("Classifier", "")
-            for estimator in estimators
-        ]
+        estimator_names = [estimator.__class__.__name__.replace("Classifier", "") for estimator in estimators]
     elif isinstance(estimator_names, str):
         estimator_names = [estimator_names]
     assert len(estimators) == len(estimator_names)
@@ -529,8 +519,7 @@ def plot_grid_search_agg_boxplot(
         ax.legend(loc="best", title="BIO-NA")
     else:  # feature_sets is a sequence of feature sets
         df_data = gs_results[
-            (gs_results.feature.isin(feature_sets))
-            & ((gs_results.BIO_na.isna()) | (gs_results.BIO_na == bio_na))
+            (gs_results.feature.isin(feature_sets)) & ((gs_results.BIO_na.isna()) | (gs_results.BIO_na == bio_na))
         ].reset_index(drop=True)
         fig, ax = plt.subplots(figsize=(16, 8))
         ax = sns.boxplot(ax=ax, x="model", y="best_score", hue="feature", data=df_data)
@@ -578,9 +567,7 @@ def plot_seizure_risk_difference(
 
     """
     if seizure_risk_dict is None:
-        seizure_risk_dict = gen_seizure_risk_diff_TDSB_ext(
-            return_type="dict", comorbidity_type=comorbidity_type, zh2en=zh2en
-        )
+        seizure_risk_dict = gen_seizure_risk_diff_TDSB_ext(return_type="dict", comorbidity_type=comorbidity_type, zh2en=zh2en)
 
     mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set_style("white")
@@ -614,18 +601,13 @@ def plot_seizure_risk_difference(
 
     scatter_values = list_sum(
         [
-            [val["seizure_risk_difference"]["risk_difference"] for val in v.values()]
-            + [np.nan, np.nan]
+            [val["seizure_risk_difference"]["risk_difference"] for val in v.values()] + [np.nan, np.nan]
             for k, v in seizure_risk_dict.items()
         ]
     )
     confints = list_sum(
         [
-            [
-                val["seizure_risk_difference"]["confidence_interval"]
-                for val in v.values()
-            ]
-            + [(0, 0), (0, 0)]
+            [val["seizure_risk_difference"]["confidence_interval"] for val in v.values()] + [(0, 0), (0, 0)]
             for k, v in seizure_risk_dict.items()
         ]
     )
@@ -652,9 +634,7 @@ def plot_seizure_risk_difference(
     x_lower = 0.1 * np.floor(10 * np.min([itv[0] for itv in confints]))
     x_upper = 0.1 * np.ceil(10 * np.max([itv[1] for itv in confints]))
 
-    fig, ax = plt.subplots(
-        figsize=((x_upper - x_lower + 0.2) * 8, 0.5 * len(scatter_values))
-    )
+    fig, ax = plt.subplots(figsize=((x_upper - x_lower + 0.2) * 8, 0.5 * len(scatter_values)))
     # plot the risk as diamonds
     ax.scatter(
         scatter_values[::-1],
@@ -759,16 +739,13 @@ def plot_feature_selection_results(
         sel_res = FeatureSelector.load_selections(path=sel_res)
     valid_methods = ["rfe", "sequential", "sfm"]
     _method_map = method_map or {"rfe": "RFE", "sfm": "SFM", "sequential": "SFS"}
-    assert (
-        method in sel_res
-    ), f"`method` should be one of {valid_methods}, but got \042{method}\042"
+    assert method in sel_res, f"`method` should be one of {valid_methods}, but got \042{method}\042"
     return plot_roc_curve(
         [item["model"] for item in sel_res[method]],
         [item["X_test"] for item in sel_res[method]],
         [item["y_test"] for item in sel_res[method]],
         estimator_names=[
-            f"{_method_map[method]}-{item['model'].__class__.__name__}-{item['X_test'].shape[1]}"
-            for item in sel_res[method]
+            f"{_method_map[method]}-{item['model'].__class__.__name__}-{item['X_test'].shape[1]}" for item in sel_res[method]
         ],
     )
 

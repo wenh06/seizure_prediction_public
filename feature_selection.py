@@ -6,32 +6,25 @@ import pickle
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union, List, Dict, Any
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.feature_selection import (  # noqa: F401
-    VarianceThreshold,
-    SelectKBest,
-    SelectFromModel,
     RFE,
+    SelectFromModel,
+    SelectKBest,
     SequentialFeatureSelector,
+    VarianceThreshold,
     chi2,
     f_classif,
-)  # noqa: F401
+)
 from tqdm.auto import tqdm
 
-from models import get_model
-from config import (
-    CFG,
-    DEFAULTS,
-    DataPreprocessConfig,
-    FeatureConfig,
-    FeatureSelectionConfig,
-)
+from config import CFG, DEFAULTS, DataPreprocessConfig, FeatureConfig, FeatureSelectionConfig
 from data_processing import get_training_data
+from models import get_model
 from utils import ReprMixin
-
 
 __all__ = ["FeatureSelector"]
 
@@ -143,9 +136,7 @@ class FeatureSelector(ReprMixin):
         n_features_to_select_key = parameters.pop("n_features_to_select_key", None)
 
         if n_features_to_select is not None:
-            n_features_to_select = [
-                int(round(ratio * total_feature_num)) for ratio in n_features_to_select
-            ]
+            n_features_to_select = [int(round(ratio * total_feature_num)) for ratio in n_features_to_select]
         else:
             n_features_to_select = [None]
 
@@ -168,18 +159,10 @@ class FeatureSelector(ReprMixin):
                 selector_obj.fit(X_train, y_train)
 
             result["selected"] = [
-                feature
-                for feature, is_selected in zip(
-                    self.feature_list, selector_obj.get_support()
-                )
-                if is_selected
+                feature for feature, is_selected in zip(self.feature_list, selector_obj.get_support()) if is_selected
             ]
             result["dropped"] = [
-                feature
-                for feature, is_selected in zip(
-                    self.feature_list, selector_obj.get_support()
-                )
-                if not is_selected
+                feature for feature, is_selected in zip(self.feature_list, selector_obj.get_support()) if not is_selected
             ]
             result["selector"] = selector_obj
             l_results.append(result)
@@ -217,10 +200,7 @@ class FeatureSelector(ReprMixin):
         ) as pbar:
             for selector, parameters in pbar:
                 sel_res[selector] = self.perform_selection(selector, parameters)
-        save_path = (
-            DEFAULTS.SAVE_DIR
-            / f"""feature_selection_{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}.tar.gz"""
-        )
+        save_path = DEFAULTS.SAVE_DIR / f"""feature_selection_{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}.tar.gz"""
         sel_res["feature_config"] = self.feature_config
         sel_res["preprocess_config"] = self.preprocess_config
         with gzip.GzipFile(save_path, "wb") as gz_file:
@@ -228,9 +208,7 @@ class FeatureSelector(ReprMixin):
         return sel_res
 
     @staticmethod
-    def load_selections(
-        path: Union[str, Path]
-    ) -> Dict[str, List[Dict[str, Union[List[str], np.ndarray, BaseEstimator]]]]:
+    def load_selections(path: Union[str, Path]) -> Dict[str, List[Dict[str, Union[List[str], np.ndarray, BaseEstimator]]]]:
         """
         Load feature selection results from a file.
 

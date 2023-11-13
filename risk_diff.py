@@ -4,23 +4,15 @@
 import pickle
 from copy import deepcopy
 from pathlib import Path
-from typing import Union, Optional
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
-from diff_binom_confint import (
-    compute_confidence_interval,
-    compute_difference_confidence_interval,
-)
+from diff_binom_confint import compute_confidence_interval, compute_difference_confidence_interval
 
 from config import DEFAULTS, DataPreprocessConfig
-from data_processing import (
-    get_training_data,
-    get_seizure_risk,
-    get_seizure_risk_difference,
-)
+from data_processing import get_seizure_risk, get_seizure_risk_difference, get_training_data
 from utils import separate_by_capital_letters
-
 
 __all__ = ["gen_seizure_risk_diff_TDSB_ext"]
 
@@ -67,8 +59,7 @@ def gen_seizure_risk_diff_TDSB_ext(
 
     """
     zh2en_mapping = {
-        k: separate_by_capital_letters(v, capitalize=True, drop=["cate"])
-        for k, v in DataPreprocessConfig.zh2en_mapping.items()
+        k: separate_by_capital_letters(v, capitalize=True, drop=["cate"]) for k, v in DataPreprocessConfig.zh2en_mapping.items()
     }
     zh2en_mapping.update(
         {
@@ -126,15 +117,9 @@ def gen_seizure_risk_diff_TDSB_ext(
 
     # age
     age_scaler = pickle.loads(DataPreprocessConfig.age_scaler_path.read_bytes())
-    df_data.年龄 = age_scaler.inverse_transform(
-        df_data.年龄.values.reshape(-1, 1)
-    ).flatten()
-    df_train.年龄 = age_scaler.inverse_transform(
-        df_train.年龄.values.reshape(-1, 1)
-    ).flatten()
-    df_test.年龄 = age_scaler.inverse_transform(
-        df_test.年龄.values.reshape(-1, 1)
-    ).flatten()
+    df_data.年龄 = age_scaler.inverse_transform(df_data.年龄.values.reshape(-1, 1)).flatten()
+    df_train.年龄 = age_scaler.inverse_transform(df_train.年龄.values.reshape(-1, 1)).flatten()
+    df_test.年龄 = age_scaler.inverse_transform(df_test.年龄.values.reshape(-1, 1)).flatten()
 
     def age_group_mapping(age):
         if age <= 20:
@@ -165,12 +150,9 @@ def gen_seizure_risk_diff_TDSB_ext(
         for age_group in df_data.年龄段.unique()
     }
     n_positive = {
-        age_group: df_data[df_data.年龄段 == age_group][DataPreprocessConfig.y_col].sum()
-        for age_group in df_data.年龄段.unique()
+        age_group: df_data[df_data.年龄段 == age_group][DataPreprocessConfig.y_col].sum() for age_group in df_data.年龄段.unique()
     }
-    seizure_risk = get_seizure_risk(
-        df_data=df_data, col="年龄段", positive_class=1, negative_class=0
-    )
+    seizure_risk = get_seizure_risk(df_data=df_data, col="年龄段", positive_class=1, negative_class=0)
     seizure_risk_diff = get_seizure_risk_difference(
         df_data=df_data,
         col="年龄段",
@@ -203,9 +185,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                 else "REF",
             ]
         )
-        ret_dict["Age"][
-            age_group + (Ref_indicator if age_group == ref_group else "")
-        ] = {
+        ret_dict["Age"][age_group + (Ref_indicator if age_group == ref_group else "")] = {
             "Affected": {
                 "n": n_affected[age_group]["total"],
                 "percent": n_affected[age_group]["total"] / len(df_data),
@@ -217,12 +197,8 @@ def gen_seizure_risk_diff_TDSB_ext(
                 "confidence_interval": seizure_risk[age_group]["confidence_interval"],
             },
             "seizure_risk_difference": {
-                "risk_difference": seizure_risk_diff[age_group]["risk_difference"]
-                if age_group != ref_group
-                else 0,
-                "confidence_interval": seizure_risk_diff[age_group][
-                    "confidence_interval"
-                ]
+                "risk_difference": seizure_risk_diff[age_group]["risk_difference"] if age_group != ref_group else 0,
+                "confidence_interval": seizure_risk_diff[age_group]["confidence_interval"]
                 if age_group != ref_group
                 else (0, 0),
             },
@@ -242,13 +218,8 @@ def gen_seizure_risk_diff_TDSB_ext(
         }
         for gender in df_data.性别.unique()
     }
-    n_positive = {
-        gender: df_data[df_data.性别 == gender][DataPreprocessConfig.y_col].sum()
-        for gender in df_data.性别.unique()
-    }
-    seizure_risk = get_seizure_risk(
-        df_data=df_data, col="性别", positive_class=1, negative_class=0
-    )
+    n_positive = {gender: df_data[df_data.性别 == gender][DataPreprocessConfig.y_col].sum() for gender in df_data.性别.unique()}
+    seizure_risk = get_seizure_risk(df_data=df_data, col="性别", positive_class=1, negative_class=0)
     seizure_risk_diff = get_seizure_risk_difference(
         df_data=df_data,
         col="性别",
@@ -285,12 +256,8 @@ def gen_seizure_risk_diff_TDSB_ext(
                 "confidence_interval": seizure_risk[gender]["confidence_interval"],
             },
             "seizure_risk_difference": {
-                "risk_difference": seizure_risk_diff[gender]["risk_difference"]
-                if gender != ref_group
-                else 0,
-                "confidence_interval": seizure_risk_diff[gender]["confidence_interval"]
-                if gender != ref_group
-                else (0, 0),
+                "risk_difference": seizure_risk_diff[gender]["risk_difference"] if gender != ref_group else 0,
+                "confidence_interval": seizure_risk_diff[gender]["confidence_interval"] if gender != ref_group else (0, 0),
             },
         }
 
@@ -321,10 +288,7 @@ def gen_seizure_risk_diff_TDSB_ext(
         for tumor_zone in tumor_zones
     }
     n_positive = {
-        tumor_zone: df_data[df_data[prefix + tumor_zone] == 1][
-            DataPreprocessConfig.y_col
-        ].sum()
-        for tumor_zone in tumor_zones
+        tumor_zone: df_data[df_data[prefix + tumor_zone] == 1][DataPreprocessConfig.y_col].sum() for tumor_zone in tumor_zones
     }
     rows.append(["肿瘤分区", "", "", "", "", "", "", ""])
     ret_dict["肿瘤分区"] = {}
@@ -355,9 +319,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                 else "REF",
             ]
         )
-        ret_dict["肿瘤分区"][
-            tumor_zone + (Ref_indicator if tumor_zone == ref_group else "")
-        ] = {
+        ret_dict["肿瘤分区"][tumor_zone + (Ref_indicator if tumor_zone == ref_group else "")] = {
             "Affected": {
                 "n": n_affected[tumor_zone]["total"],
                 "percent": n_affected[tumor_zone]["total"] / len(df_data),
@@ -369,14 +331,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                 "confidence_interval": seizure_risk_confint,
             },
             "seizure_risk_difference": {
-                "risk_difference": n_positive[tumor_zone]
-                / n_affected[tumor_zone]["total"]
+                "risk_difference": n_positive[tumor_zone] / n_affected[tumor_zone]["total"]
                 - n_positive[ref_group] / n_affected[ref_group]["total"]
                 if tumor_zone != ref_group
                 else 0,
-                "confidence_interval": seizure_risk_diff_confint
-                if tumor_zone != ref_group
-                else (0, 0),
+                "confidence_interval": seizure_risk_diff_confint if tumor_zone != ref_group else (0, 0),
             },
         }
 
@@ -395,12 +354,9 @@ def gen_seizure_risk_diff_TDSB_ext(
         for who_grade in df_data.病理分级.unique()
     }
     n_positive = {
-        who_grade: df_data[df_data.病理分级 == who_grade][DataPreprocessConfig.y_col].sum()
-        for who_grade in df_data.病理分级.unique()
+        who_grade: df_data[df_data.病理分级 == who_grade][DataPreprocessConfig.y_col].sum() for who_grade in df_data.病理分级.unique()
     }
-    seizure_risk = get_seizure_risk(
-        df_data=df_data, col="病理分级", positive_class=1, negative_class=0
-    )
+    seizure_risk = get_seizure_risk(df_data=df_data, col="病理分级", positive_class=1, negative_class=0)
     seizure_risk_diff = get_seizure_risk_difference(
         df_data=df_data,
         col="病理分级",
@@ -425,9 +381,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                 else "REF",
             ]
         )
-        ret_dict["病理分级"][
-            str(who_grade) + (Ref_indicator if who_grade == ref_group else "")
-        ] = {
+        ret_dict["病理分级"][str(who_grade) + (Ref_indicator if who_grade == ref_group else "")] = {
             "Affected": {
                 "n": n_affected[who_grade]["total"],
                 "percent": n_affected[who_grade]["total"] / len(df_data),
@@ -439,12 +393,8 @@ def gen_seizure_risk_diff_TDSB_ext(
                 "confidence_interval": seizure_risk[who_grade]["confidence_interval"],
             },
             "seizure_risk_difference": {
-                "risk_difference": seizure_risk_diff[who_grade]["risk_difference"]
-                if who_grade != ref_group
-                else 0,
-                "confidence_interval": seizure_risk_diff[who_grade][
-                    "confidence_interval"
-                ]
+                "risk_difference": seizure_risk_diff[who_grade]["risk_difference"] if who_grade != ref_group else 0,
+                "confidence_interval": seizure_risk_diff[who_grade]["confidence_interval"]
                 if who_grade != ref_group
                 else (0, 0),
             },
@@ -465,14 +415,10 @@ def gen_seizure_risk_diff_TDSB_ext(
         for patho_class in df_data.病理分型粗.unique()
     }
     n_positive = {
-        patho_class: df_data[df_data.病理分型粗 == patho_class][
-            DataPreprocessConfig.y_col
-        ].sum()
+        patho_class: df_data[df_data.病理分型粗 == patho_class][DataPreprocessConfig.y_col].sum()
         for patho_class in df_data.病理分型粗.unique()
     }
-    seizure_risk = get_seizure_risk(
-        df_data=df_data, col="病理分型粗", positive_class=1, negative_class=0
-    )
+    seizure_risk = get_seizure_risk(df_data=df_data, col="病理分型粗", positive_class=1, negative_class=0)
     seizure_risk_diff = get_seizure_risk_difference(
         df_data=df_data,
         col="病理分型粗",
@@ -507,9 +453,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                 else "REF",
             ]
         )
-        ret_dict["病理分型粗"][
-            patho_class + (Ref_indicator if patho_class == ref_group else "")
-        ] = {
+        ret_dict["病理分型粗"][patho_class + (Ref_indicator if patho_class == ref_group else "")] = {
             "Affected": {
                 "n": n_affected[patho_class]["total"],
                 "percent": n_affected[patho_class]["total"] / len(df_data),
@@ -521,12 +465,8 @@ def gen_seizure_risk_diff_TDSB_ext(
                 "confidence_interval": seizure_risk[patho_class]["confidence_interval"],
             },
             "seizure_risk_difference": {
-                "risk_difference": seizure_risk_diff[patho_class]["risk_difference"]
-                if patho_class != ref_group
-                else 0,
-                "confidence_interval": seizure_risk_diff[patho_class][
-                    "confidence_interval"
-                ]
+                "risk_difference": seizure_risk_diff[patho_class]["risk_difference"] if patho_class != ref_group else 0,
+                "confidence_interval": seizure_risk_diff[patho_class]["confidence_interval"]
                 if patho_class != ref_group
                 else (0, 0),
             },
@@ -554,9 +494,7 @@ def gen_seizure_risk_diff_TDSB_ext(
             for comorbidity in comorbidities
         }
         n_positive = {
-            comorbidity: df_data[df_data[prefix + comorbidity] == 1][
-                DataPreprocessConfig.y_col
-            ].sum()
+            comorbidity: df_data[df_data[prefix + comorbidity] == 1][DataPreprocessConfig.y_col].sum()
             for comorbidity in comorbidities
         }
         rows.append(["合并症", "", "", "", "", "", "", ""])
@@ -588,9 +526,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                     else "REF",
                 ]
             )
-            ret_dict["合并症"][
-                comorbidity + (Ref_indicator if comorbidity == ref_group else "")
-            ] = {
+            ret_dict["合并症"][comorbidity + (Ref_indicator if comorbidity == ref_group else "")] = {
                 "Affected": {
                     "n": n_affected[comorbidity]["total"],
                     "percent": n_affected[comorbidity]["total"] / len(df_data),
@@ -598,19 +534,15 @@ def gen_seizure_risk_diff_TDSB_ext(
                 },
                 "seiuzre_risk": {
                     "n": n_positive[comorbidity],
-                    "percent": n_positive[comorbidity]
-                    / n_affected[comorbidity]["total"],
+                    "percent": n_positive[comorbidity] / n_affected[comorbidity]["total"],
                     "confidence_interval": seizure_risk_confint,
                 },
                 "seizure_risk_difference": {
-                    "risk_difference": n_positive[comorbidity]
-                    / n_affected[comorbidity]["total"]
+                    "risk_difference": n_positive[comorbidity] / n_affected[comorbidity]["total"]
                     - n_positive[ref_group] / n_affected[ref_group]["total"]
                     if comorbidity != ref_group
                     else 0,
-                    "confidence_interval": seizure_risk_diff_confint
-                    if comorbidity != ref_group
-                    else (0, 0),
+                    "confidence_interval": seizure_risk_diff_confint if comorbidity != ref_group else (0, 0),
                 },
             }
     elif comorbidity_type == 0:
@@ -629,12 +561,8 @@ def gen_seizure_risk_diff_TDSB_ext(
                 },
             }
             n_positive = {
-                "Yes": df_data[df_data[prefix + comorbidity] == 1][
-                    DataPreprocessConfig.y_col
-                ].sum(),
-                "No": df_data[df_data[prefix + comorbidity] == 0][
-                    DataPreprocessConfig.y_col
-                ].sum(),
+                "Yes": df_data[df_data[prefix + comorbidity] == 1][DataPreprocessConfig.y_col].sum(),
+                "No": df_data[df_data[prefix + comorbidity] == 0][DataPreprocessConfig.y_col].sum(),
             }
             rows.append([comorbidity, "", "", "", "", "", "", ""])
             ret_dict[comorbidity] = {}
@@ -665,9 +593,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                         else "REF",
                     ]
                 )
-                ret_dict[comorbidity][
-                    group + (Ref_indicator if group == ref_group else "")
-                ] = {
+                ret_dict[comorbidity][group + (Ref_indicator if group == ref_group else "")] = {
                     "Affected": {
                         "n": n_affected[group]["total"],
                         "percent": n_affected[group]["total"] / len(df_data),
@@ -679,14 +605,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                         "confidence_interval": seizure_risk_confint,
                     },
                     "seizure_risk_difference": {
-                        "risk_difference": n_positive[group]
-                        / n_affected[group]["total"]
+                        "risk_difference": n_positive[group] / n_affected[group]["total"]
                         - n_positive[ref_group] / n_affected[ref_group]["total"]
                         if group != ref_group
                         else 0,
-                        "confidence_interval": seizure_risk_diff_confint
-                        if group != ref_group
-                        else (0, 0),
+                        "confidence_interval": seizure_risk_diff_confint if group != ref_group else (0, 0),
                     },
                 }
     else:
@@ -711,14 +634,10 @@ def gen_seizure_risk_diff_TDSB_ext(
         for resection_method in df_data.手术切除方式.unique()
     }
     n_positive = {
-        resection_method: df_data[df_data.手术切除方式 == resection_method][
-            DataPreprocessConfig.y_col
-        ].sum()
+        resection_method: df_data[df_data.手术切除方式 == resection_method][DataPreprocessConfig.y_col].sum()
         for resection_method in df_data.手术切除方式.unique()
     }
-    seizure_risk = get_seizure_risk(
-        df_data=df_data, col="手术切除方式", positive_class=1, negative_class=0
-    )
+    seizure_risk = get_seizure_risk(df_data=df_data, col="手术切除方式", positive_class=1, negative_class=0)
     seizure_risk_diff = get_seizure_risk_difference(
         df_data=df_data,
         col="手术切除方式",
@@ -744,9 +663,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                 else "REF",
             ]
         )
-        ret_dict["手术切除方式"][
-            resection_method + (Ref_indicator if resection_method == ref_group else "")
-        ] = {
+        ret_dict["手术切除方式"][resection_method + (Ref_indicator if resection_method == ref_group else "")] = {
             "Affected": {
                 "n": n_affected[resection_method]["total"],
                 "percent": n_affected[resection_method]["total"] / len(df_data),
@@ -755,19 +672,13 @@ def gen_seizure_risk_diff_TDSB_ext(
             "seiuzre_risk": {
                 "n": n_positive[resection_method],
                 "percent": seizure_risk[resection_method]["risk"],
-                "confidence_interval": seizure_risk[resection_method][
-                    "confidence_interval"
-                ],
+                "confidence_interval": seizure_risk[resection_method]["confidence_interval"],
             },
             "seizure_risk_difference": {
-                "risk_difference": seizure_risk_diff[resection_method][
-                    "risk_difference"
-                ]
+                "risk_difference": seizure_risk_diff[resection_method]["risk_difference"]
                 if resection_method != ref_group
                 else 0,
-                "confidence_interval": seizure_risk_diff[resection_method][
-                    "confidence_interval"
-                ]
+                "confidence_interval": seizure_risk_diff[resection_method]["confidence_interval"]
                 if resection_method != ref_group
                 else (0, 0),
             },
@@ -788,14 +699,10 @@ def gen_seizure_risk_diff_TDSB_ext(
         for tumor_size in df_data.C肿瘤最大直径.unique()
     }
     n_positive = {
-        tumor_size: df_data[df_data.C肿瘤最大直径 == tumor_size][
-            DataPreprocessConfig.y_col
-        ].sum()
+        tumor_size: df_data[df_data.C肿瘤最大直径 == tumor_size][DataPreprocessConfig.y_col].sum()
         for tumor_size in df_data.C肿瘤最大直径.unique()
     }
-    seizure_risk = get_seizure_risk(
-        df_data=df_data, col="C肿瘤最大直径", positive_class=1, negative_class=0
-    )
+    seizure_risk = get_seizure_risk(df_data=df_data, col="C肿瘤最大直径", positive_class=1, negative_class=0)
     seizure_risk_diff = get_seizure_risk_difference(
         df_data=df_data,
         col="C肿瘤最大直径",
@@ -820,9 +727,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                 else "REF",
             ]
         )
-        ret_dict["C肿瘤最大直径"][
-            str(tumor_size) + (Ref_indicator if tumor_size == ref_group else "")
-        ] = {
+        ret_dict["C肿瘤最大直径"][str(tumor_size) + (Ref_indicator if tumor_size == ref_group else "")] = {
             "Affected": {
                 "n": n_affected[tumor_size]["total"],
                 "percent": n_affected[tumor_size]["total"] / len(df_data),
@@ -834,12 +739,8 @@ def gen_seizure_risk_diff_TDSB_ext(
                 "confidence_interval": seizure_risk[tumor_size]["confidence_interval"],
             },
             "seizure_risk_difference": {
-                "risk_difference": seizure_risk_diff[tumor_size]["risk_difference"]
-                if tumor_size != ref_group
-                else 0,
-                "confidence_interval": seizure_risk_diff[tumor_size][
-                    "confidence_interval"
-                ]
+                "risk_difference": seizure_risk_diff[tumor_size]["risk_difference"] if tumor_size != ref_group else 0,
+                "confidence_interval": seizure_risk_diff[tumor_size]["confidence_interval"]
                 if tumor_size != ref_group
                 else (0, 0),
             },
@@ -878,10 +779,7 @@ def gen_seizure_risk_diff_TDSB_ext(
             }
             for bio in bio_levels
         }
-        n_positive = {
-            bio: df_data[df_data[col] == bio][DataPreprocessConfig.y_col].sum()
-            for bio in bio_levels
-        }
+        n_positive = {bio: df_data[df_data[col] == bio][DataPreprocessConfig.y_col].sum() for bio in bio_levels}
         rows.append([col.replace("BIO_", ""), "", "", "", "", "", "", ""])
         ret_dict[col.replace("BIO_", "")] = {}
         for bio in bio_levels:
@@ -900,9 +798,7 @@ def gen_seizure_risk_diff_TDSB_ext(
             rows.append(
                 [
                     "",
-                    bio.replace(
-                        DataPreprocessConfig.BIO_na_fillvalue, _BIO_na_fillvalue
-                    ),
+                    bio.replace(DataPreprocessConfig.BIO_na_fillvalue, _BIO_na_fillvalue),
                     f"{n_affected[bio]['total']}",
                     f"{n_affected[bio]['total'] / len(df_data):.1%}",
                     f"{n_affected[bio]['train']}/{n_affected[bio]['test']}",
@@ -929,24 +825,18 @@ def gen_seizure_risk_diff_TDSB_ext(
                 },
                 "seizure_risk_difference": {
                     "risk_difference": (
-                        n_positive[bio] / n_affected[bio]["total"]
-                        - n_positive[ref_group] / n_affected[ref_group]["total"]
+                        n_positive[bio] / n_affected[bio]["total"] - n_positive[ref_group] / n_affected[ref_group]["total"]
                     )
                     if bio != ref_group
                     else 0,
-                    "confidence_interval": seizure_risk_diff_confint
-                    if bio != ref_group
-                    else (0, 0),
+                    "confidence_interval": seizure_risk_diff_confint if bio != ref_group else (0, 0),
                 },
             }
 
     split_values = [10, 30, 60]
     bio_levels = (
         [f"<= {split_values[0]}%"]
-        + [
-            f"{split_values[i-1]}% - {split_values[i]}%"
-            for i in range(1, len(split_values))
-        ]
+        + [f"{split_values[i-1]}% - {split_values[i]}%" for i in range(1, len(split_values))]
         + [f"> {split_values[-1]}%"]
         + [_BIO_na_fillvalue]
     )
@@ -974,10 +864,7 @@ def gen_seizure_risk_diff_TDSB_ext(
             }
             for bio in bio_levels
         }
-        n_positive = {
-            bio: df_data[df_data[col] == bio][DataPreprocessConfig.y_col].sum()
-            for bio in bio_levels
-        }
+        n_positive = {bio: df_data[df_data[col] == bio][DataPreprocessConfig.y_col].sum() for bio in bio_levels}
         rows.append([col.replace("BIO_", ""), "", "", "", "", "", "", ""])
         ret_dict[col.replace("BIO_", "")] = {}
         for bio in bio_levels:
@@ -1007,9 +894,7 @@ def gen_seizure_risk_diff_TDSB_ext(
                     else "REF",
                 ]
             )
-            ret_dict[col.replace("BIO_", "")][
-                bio + (Ref_indicator if bio == ref_group else "")
-            ] = {
+            ret_dict[col.replace("BIO_", "")][bio + (Ref_indicator if bio == ref_group else "")] = {
                 "Affected": {
                     "n": n_affected[bio]["total"],
                     "percent": n_affected[bio]["total"] / len(df_data),
@@ -1022,14 +907,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                 },
                 "seizure_risk_difference": {
                     "risk_difference": (
-                        n_positive[bio] / n_affected[bio]["total"]
-                        - n_positive[ref_group] / n_affected[ref_group]["total"]
+                        n_positive[bio] / n_affected[bio]["total"] - n_positive[ref_group] / n_affected[ref_group]["total"]
                     )
                     if bio != ref_group
                     else 0,
-                    "confidence_interval": seizure_risk_diff_confint
-                    if bio != ref_group
-                    else (0, 0),
+                    "confidence_interval": seizure_risk_diff_confint if bio != ref_group else (0, 0),
                 },
             }
 
@@ -1037,9 +919,7 @@ def gen_seizure_risk_diff_TDSB_ext(
         for row_idx, row in enumerate(rows):
             for item_idx, item in enumerate(row):
                 if item in zh2en_mapping:
-                    rows[row_idx][item_idx] = (
-                        zh2en_mapping[item].replace("Of", "of").replace("Or", "or")
-                    )
+                    rows[row_idx][item_idx] = zh2en_mapping[item].replace("Of", "of").replace("Or", "or")
         _tmp_dict = deepcopy(ret_dict)
         ret_dict = {}
         for k, v in _tmp_dict.items():
@@ -1047,11 +927,7 @@ def gen_seizure_risk_diff_TDSB_ext(
             ret_dict[new_k] = {}
             for key, val in v.items():
                 if key.replace(Ref_indicator, "") in zh2en_mapping:
-                    new_key = (
-                        zh2en_mapping[key.replace(Ref_indicator, "")]
-                        .replace("Of", "of")
-                        .replace("Or", "or")
-                    )
+                    new_key = zh2en_mapping[key.replace(Ref_indicator, "")].replace("Of", "of").replace("Or", "or")
                     if Ref_indicator in key:
                         new_key = new_key + Ref_indicator
                     ret_dict[new_k][new_key] = val

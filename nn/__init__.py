@@ -1,9 +1,8 @@
 """
 """
 
-from .trainer import SeizureTrainer
 from .model import SeizureMLP
-
+from .trainer import SeizureTrainer
 
 __all__ = [
     "SeizureTrainer",

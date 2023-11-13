@@ -1,37 +1,36 @@
 """
 """
 
-import json
 import gzip
+import json
+import multiprocessing as mp
 import pickle
 import warnings
-import multiprocessing as mp
 from copy import deepcopy
 from datetime import datetime
-from typing import Tuple, Optional, List, Union, Dict, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
-from sklearn.model_selection import ParameterGrid, GridSearchCV
 from sklearn.metrics import (
-    accuracy_score,
-    confusion_matrix,
-    roc_auc_score,
-    f1_score,
-    classification_report,
-    plot_roc_curve,
-    plot_confusion_matrix,
-    RocCurveDisplay,
     ConfusionMatrixDisplay,
+    RocCurveDisplay,
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    plot_confusion_matrix,
+    plot_roc_curve,
+    roc_auc_score,
 )
+from sklearn.model_selection import GridSearchCV, ParameterGrid
 from tqdm.auto import tqdm
 
-from models import get_model, _MODEL_MAP
 from config import CFG, DEFAULTS, DataPreprocessConfig, FeatureConfig, GridSearchConfig
 from data_processing import get_training_data
+from models import _MODEL_MAP, get_model
 from utils import ReprMixin, timeout
-
 
 __all__ = [
     "GridSearch",
@@ -149,11 +148,7 @@ class GridSearch(ReprMixin):
         cache_key = self._get_cache_key(model_name, feature_set, cv, experiment_tag)
 
         if cv is None:
-            (
-                self.best_clf,
-                self.best_params,
-                self.best_score,
-            ) = _perform_grid_search_no_cv(
+            (self.best_clf, self.best_params, self.best_score,) = _perform_grid_search_no_cv(
                 model_name,
                 self.grid_search_config[model_name],
                 self.X_train,
@@ -180,12 +175,7 @@ class GridSearch(ReprMixin):
 
             return self.best_clf, self.best_params, self.best_score
         else:
-            (
-                self.best_clf,
-                self.best_params,
-                self.best_score,
-                self.test_score,
-            ) = _perform_grid_search_cv(
+            (self.best_clf, self.best_params, self.best_score, self.test_score,) = _perform_grid_search_cv(
                 model_name,
                 self.grid_search_config[model_name],
                 self.X_train,
@@ -468,9 +458,7 @@ class GridSearch(ReprMixin):
             raise ValueError("No trained classifier!")
         return plot_roc_curve(clf, X_test, y_test)
 
-    def plot_confusion_matrix(
-        self, cached_item: Optional[dict] = None
-    ) -> ConfusionMatrixDisplay:
+    def plot_confusion_matrix(self, cached_item: Optional[dict] = None) -> ConfusionMatrixDisplay:
         """
         Plot the confusion matrix of the cached grid search results.
 
@@ -500,9 +488,7 @@ class GridSearch(ReprMixin):
         """List the names of the model names to perform grid search."""
         return list(self.grid_search_config)
 
-    def list_feature_sets(
-        self, with_details: bool = False
-    ) -> Union[Dict[str, List[str]], List[str]]:
+    def list_feature_sets(self, with_details: bool = False) -> Union[Dict[str, List[str]], List[str]]:
         """
         List the feature sets to perform grid search.
 
@@ -563,19 +549,14 @@ class GridSearch(ReprMixin):
                             model=model,
                             feature=feature,
                             BIO_na=strategy,
-                            best_params=json.dumps(
-                                cache["best_params"], ensure_ascii=False
-                            ),
+                            best_params=json.dumps(cache["best_params"], ensure_ascii=False),
                             best_score=cache["best_score"],
                         ),
                         index=[idx],
                     ),
                 )
             )
-        save_path = (
-            DEFAULTS.SAVE_DIR
-            / f"""full_search_{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}.csv"""
-        )
+        save_path = DEFAULTS.SAVE_DIR / f"""full_search_{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}.csv"""
         df_results.to_csv(save_path, index=False)
         if save_cache:
             save_path = save_path.with_suffix(".pkl.gz")
@@ -609,9 +590,7 @@ class GridSearch(ReprMixin):
                     self.update_feature_config(config=feature_config)
                     try:
                         with timeout(time_limit) as t:
-                            self.search(
-                                model_name, feature_set, experiment_tag=strategy
-                            )
+                            self.search(model_name, feature_set, experiment_tag=strategy)
                     except TimeoutError:
                         pass
 
@@ -650,18 +629,10 @@ class GridSearch(ReprMixin):
                         X_test,
                         y_test,
                         feature_list,
-                    ) = get_training_data(
-                        preprocess_config, feature_config, feature_set
-                    )
+                    ) = get_training_data(preprocess_config, feature_config, feature_set)
                     feature_config.feature_list = feature_list
-                    iterable.append(
-                        (model_name, param_grid, X_train, y_train, X_test, y_test)
-                    )
-                    cache_keys.append(
-                        self._get_cache_key(
-                            model_name, feature_set, cv=None, name=strategy
-                        )
-                    )
+                    iterable.append((model_name, param_grid, X_train, y_train, X_test, y_test))
+                    cache_keys.append(self._get_cache_key(model_name, feature_set, cv=None, name=strategy))
         with mp.Pool(
             processes=max(
                 1,
@@ -741,9 +712,7 @@ def perform_grid_search_no_cv(
 
     feature_config.set_name = feature_set
 
-    X_train, y_train, X_test, y_test, feature_list = get_training_data(
-        preprocess_config, feature_config, feature_set
-    )
+    X_train, y_train, X_test, y_test, feature_list = get_training_data(preprocess_config, feature_config, feature_set)
     feature_config.feature_list = feature_list
 
     best_clf, best_params, best_score = _perform_grid_search_no_cv(
@@ -825,9 +794,7 @@ def perform_grid_search_cv(
 
     feature_config.set_name = feature_set
 
-    X_train, y_train, X_test, y_test, feature_list = get_training_data(
-        preprocess_config, feature_config, feature_set
-    )
+    X_train, y_train, X_test, y_test, feature_list = get_training_data(preprocess_config, feature_config, feature_set)
     feature_config.feature_list = feature_list
 
     best_clf, best_params, best_score, test_score = _perform_grid_search_cv(
@@ -929,9 +896,7 @@ def gather_grid_search_results(
 
     """
     if model_name_map is None:
-        model_name_map = {
-            k: v.__name__.replace("Classifier", "") for k, v in _MODEL_MAP.items()
-        }
+        model_name_map = {k: v.__name__.replace("Classifier", "") for k, v in _MODEL_MAP.items()}
     folder = DEFAULTS.SAVE_DIR
     if sub_dirs is not None:
         if isinstance(sub_dirs, str):
@@ -952,22 +917,12 @@ def gather_grid_search_results(
     results_all.best_score = ""
     results_all["filename"] = ""
     for idx, row in results_all.iterrows():
-        results_all.at[idx, "best_score"] = [
-            df.loc[idx, "best_score"] for df in results
-        ]
+        results_all.at[idx, "best_score"] = [df.loc[idx, "best_score"] for df in results]
         results_all.at[idx, "filename"] = [str(file) for file in results_csv_files]
-    results_all.loc[:, "best_score_mean"] = results_all.best_score.apply(
-        lambda s: np.mean(s)
-    )
-    results_all.loc[:, "best_score_std"] = results_all.best_score.apply(
-        lambda s: np.std(s)
-    )
-    results_all.loc[:, "best_score_max"] = results_all.best_score.apply(
-        lambda s: np.max(s)
-    )
-    results_all.loc[:, "best_score_min"] = results_all.best_score.apply(
-        lambda s: np.min(s)
-    )
+    results_all.loc[:, "best_score_mean"] = results_all.best_score.apply(lambda s: np.mean(s))
+    results_all.loc[:, "best_score_std"] = results_all.best_score.apply(lambda s: np.std(s))
+    results_all.loc[:, "best_score_max"] = results_all.best_score.apply(lambda s: np.max(s))
+    results_all.loc[:, "best_score_min"] = results_all.best_score.apply(lambda s: np.min(s))
     results_all.loc[:, "model"] = results_all.model.map(model_name_map)
     return results_all
 

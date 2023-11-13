@@ -2,7 +2,7 @@
 """
 
 from inspect import isclass
-from typing import Union, Optional, Dict
+from typing import Dict, Optional, Union
 
 import numpy as np
 import torch
@@ -12,7 +12,6 @@ from torch import Tensor
 
 from config import CFG
 
-
 __all__ = [
     "CLFMixin",
     "SizeMixin",
@@ -20,9 +19,7 @@ __all__ = [
 ]
 
 
-def compute_module_size(
-    module: nn.Module, human: bool = False, dtype: str = "float32"
-) -> Union[int, str]:
+def compute_module_size(module: nn.Module, human: bool = False, dtype: str = "float32") -> Union[int, str]:
     """
     compute the size (number of parameters) of a module
 
@@ -45,9 +42,7 @@ def compute_module_size(
     module_parameters = filter(lambda p: p.requires_grad, module.parameters())
     n_params = sum([np.prod(p.size()) for p in module_parameters])
     if human:
-        n_params = (
-            n_params * {"float16": 2, "float32": 4, "float64": 8}[dtype.lower()] / 1024
-        )
+        n_params = n_params * {"float16": 2, "float32": 4, "float64": 8}[dtype.lower()] / 1024
         div_count = 0
         while n_params >= 1024:
             n_params /= 1024
@@ -114,9 +109,7 @@ class CLFMixin:
 
     __name__ = "CLFMixin"
 
-    def predict_proba(
-        self, input: Union[Tensor, np.ndarray], multi_label: bool = False
-    ) -> np.ndarray:
+    def predict_proba(self, input: Union[Tensor, np.ndarray], multi_label: bool = False) -> np.ndarray:
         """ """
         if isinstance(input, np.ndarray):
             input = torch.from_numpy(input).float().to(self.device)
@@ -141,9 +134,7 @@ class CLFMixin:
         output = [[] for _ in range(input.shape[0])]
         indices = np.where(proba > thr)
         if len(indices) > 2:
-            raise ValueError(
-                "multi-label classification is not supported for output of 3 dimensions or more"
-            )
+            raise ValueError("multi-label classification is not supported for output of 3 dimensions or more")
         for i, j in zip(*indices):
             output[i].append(j)
         for idx in range(len(output)):
@@ -248,9 +239,7 @@ Activations.hardsigmoid = nn.Hardsigmoid
 Activations.softmax = nn.Softmax
 
 
-def get_activation(
-    act: Union[str, nn.Module, type(None)], kw_act: Optional[dict] = None
-) -> Optional[nn.Module]:
+def get_activation(act: Union[str, nn.Module, type(None)], kw_act: Optional[dict] = None) -> Optional[nn.Module]:
     """
 
     Parameters

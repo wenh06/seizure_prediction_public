@@ -9,30 +9,26 @@ import pickle
 import warnings
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional, Tuple, List, Union, Sequence, Dict, Any
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from deprecate_kwargs import deprecate_kwargs
+from diff_binom_confint import compute_confidence_interval, compute_difference_confidence_interval
+from imblearn.over_sampling import ADASYN, SMOTE, SMOTEN, SMOTENC, RandomOverSampler
+from imblearn.over_sampling.base import BaseOverSampler
 from sklearn.preprocessing import (  # noqa: F401
     Binarizer,
     LabelEncoder,
+    MinMaxScaler,
     OneHotEncoder,
     OrdinalEncoder,
     PolynomialFeatures,
-    MinMaxScaler,
     StandardScaler,
 )
-from imblearn.over_sampling import ADASYN, SMOTE, SMOTENC, SMOTEN, RandomOverSampler
-from imblearn.over_sampling.base import BaseOverSampler
-from diff_binom_confint import (
-    compute_confidence_interval,
-    compute_difference_confidence_interval,
-)
-from deprecate_kwargs import deprecate_kwargs
 
 from config import CFG, DEFAULTS, DataPreprocessConfig, FeatureConfig
 from utils import list_sum, stratified_train_test_split  # noqa: F401
-
 
 __all__ = [
     "load_raw_data",
@@ -68,9 +64,7 @@ def load_raw_data(data_fp: Optional[Union[str, Path]] = None) -> pd.DataFrame:
     return df_data
 
 
-def preprocess_data(
-    config: Optional[CFG] = None, data: Optional[Union[str, Path, pd.DataFrame]] = None
-) -> pd.DataFrame:
+def preprocess_data(config: Optional[CFG] = None, data: Optional[Union[str, Path, pd.DataFrame]] = None) -> pd.DataFrame:
     """
     Perform data preprocessing on the raw data with the given configuration.
 
@@ -117,30 +111,20 @@ def preprocess_data(
 
     # Converting categorical feature to numeric
     if y_col in df_refined.columns:
-        df_refined.loc[df_refined.index, y_col] = df_refined[y_col].map(
-            config.y_col_mapping
-        )
+        df_refined.loc[df_refined.index, y_col] = df_refined[y_col].map(config.y_col_mapping)
 
     # BIO features
     BIO_cate_var = [c for c in df_refined.columns if c in config.BIO_cate_var]
-    df_refined.loc[df_refined.index, BIO_cate_var] = df_refined[BIO_cate_var].fillna(
-        config.BIO_na_fillvalue
-    )
+    df_refined.loc[df_refined.index, BIO_cate_var] = df_refined[BIO_cate_var].fillna(config.BIO_na_fillvalue)
     for c in BIO_cate_var:
         df_refined.loc[df_refined.index, c] = df_refined[c].map(config.BIO_mapping)
 
     # use OneHotEncoding to refine tumor zone features
     # 肿瘤分区 = list(set(list_sum([cell.split(",") for cell in df_refined.肿瘤分区])))
-    肿瘤分区 = [
-        item.replace("肿瘤分区_", "")
-        for item in config.tumor_cate_var
-        if item.startswith("肿瘤分区_")
-    ]
+    肿瘤分区 = [item.replace("肿瘤分区_", "") for item in config.tumor_cate_var if item.startswith("肿瘤分区_")]
     if "肿瘤分区" in df_refined.columns:
         for item in 肿瘤分区:
-            df_refined.loc[df_refined.index, f"肿瘤分区_{item}"] = df_refined["肿瘤分区"].apply(
-                lambda s: int(item in s.split(","))
-            )
+            df_refined.loc[df_refined.index, f"肿瘤分区_{item}"] = df_refined["肿瘤分区"].apply(lambda s: int(item in s.split(",")))
         # df_refined.loc[df_refined.index, "肿瘤分区_额或颞"] = (
         #     df_refined["肿瘤分区_额"] | df_refined["肿瘤分区_颞"]
         # )
@@ -154,9 +138,7 @@ def preprocess_data(
             continue
         if c not in config.x_col_mappings:
             continue
-        df_refined.loc[df_refined.index, c] = df_refined[c].map(
-            config.x_col_mappings[c]
-        )
+        df_refined.loc[df_refined.index, c] = df_refined[c].map(config.x_col_mappings[c])
 
     # normalize features via sklearn.preprocessing
     age_scaler_path = Path(config.age_scaler_path)
@@ -166,9 +148,7 @@ def preprocess_data(
     else:
         age_scaler = MinMaxScaler()
     if "年龄" in df_refined.columns:
-        df_refined.loc[df_refined.index, "年龄"] = age_scaler.fit_transform(
-            df_refined["年龄"].values.reshape(-1, 1)
-        ).flatten()
+        df_refined.loc[df_refined.index, "年龄"] = age_scaler.fit_transform(df_refined["年龄"].values.reshape(-1, 1)).flatten()
         if not age_scaler_path.is_file():
             age_scaler_path.write_bytes(pickle.dumps(age_scaler))
 
@@ -237,9 +217,7 @@ def get_features(
     if feature_set is not None:
         feature_config.set_name = feature_set
     elif feature_config.set_name is None:
-        raise ValueError(
-            "Either `feature_set` or `feature_config.set_name` should be provided."
-        )
+        raise ValueError("Either `feature_set` or `feature_config.set_name` should be provided.")
     else:
         feature_set = feature_config.set_name
     assert feature_set in feature_config.sets
@@ -253,15 +231,9 @@ def get_features(
     elif not ensure_y:
         df_refined = df_refined[feature_cols]
     else:
-        raise ValueError(
-            f"y_col `{preprocess_config.y_col}` is not in the refined data"
-        )
-    bio_cate_cols = [
-        item for item in feature_cols if item in preprocess_config.BIO_cate_var
-    ]
-    bio_cont_cols = [
-        item for item in feature_cols if item in preprocess_config.BIO_cont_var
-    ]
+        raise ValueError(f"y_col `{preprocess_config.y_col}` is not in the refined data")
+    bio_cate_cols = [item for item in feature_cols if item in preprocess_config.BIO_cate_var]
+    bio_cont_cols = [item for item in feature_cols if item in preprocess_config.BIO_cont_var]
     if feature_config.BIO_na_strategy == "drop":
         if kwargs.get("inference", False):
             # in inference mode, skip dropping rows with missing values
@@ -271,10 +243,9 @@ def get_features(
             if len(bio_cont_cols) > 0:
                 df_refined.drop(columns=bio_cont_cols, inplace=True)
             if len(bio_cate_cols) > 0:
-                series = (
-                    df_refined[bio_cate_cols]
-                    == preprocess_config.BIO_mapping[preprocess_config.BIO_na_fillvalue]
-                ).any(axis=1)
+                series = (df_refined[bio_cate_cols] == preprocess_config.BIO_mapping[preprocess_config.BIO_na_fillvalue]).any(
+                    axis=1
+                )
                 df_refined = df_refined[~series]
     elif feature_config.BIO_na_strategy == "random":
         raise NotImplementedError
@@ -311,17 +282,11 @@ def get_features(
     # check nan cells in the refined data
     if not kwargs.get("allow_missing", False) and df_refined.isnull().values.any():
         err = {
-            row_idx
-            + 1: [c for c in df_refined.columns if pd.isnull(df_refined[c][row_idx])]
+            row_idx + 1: [c for c in df_refined.columns if pd.isnull(df_refined[c][row_idx])]
             for row_idx in range(df_refined.shape[0])
             if df_refined.isnull().iloc[row_idx].any()
         }
-        err = "; ".join(
-            [
-                f"the {row_idx}-th piece of data has nan values in columns `{cols}`"
-                for row_idx, cols in err.items()
-            ]
-        )
+        err = "; ".join([f"the {row_idx}-th piece of data has nan values in columns `{cols}`" for row_idx, cols in err.items()])
         raise ValueError(f"nan cells detected in the refined data: {err}")
 
     return df_refined, feature_list
@@ -335,10 +300,7 @@ def get_training_data(
     data: Optional[Union[str, Path, pd.DataFrame]] = None,
     return_dtype: str = "np",
     **kwargs: Any,
-) -> Union[
-    Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[str]],
-    Tuple[pd.DataFrame, pd.DataFrame, List[str]],
-]:
+) -> Union[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[str]], Tuple[pd.DataFrame, pd.DataFrame, List[str]],]:
     """
     Get the training data with the given configurations.
 
@@ -400,9 +362,7 @@ def get_training_data(
     feature_list = feature_cols
 
     preprocess_config.split_file_path = Path(preprocess_config.split_file_path)
-    preprocess_config.split_file_path = (
-        DEFAULTS.DATA_DIR / preprocess_config.split_file_path.name
-    )
+    preprocess_config.split_file_path = DEFAULTS.DATA_DIR / preprocess_config.split_file_path.name
     if preprocess_config.split_file_path.is_file():
         train_test_split = json.loads(preprocess_config.split_file_path.read_text())
         df_train = df_refined[df_refined.index.isin(train_test_split["train"])]
@@ -432,16 +392,12 @@ def get_training_data(
             if over_sampler == "smotenc":
                 over_sampler_kw = {
                     "categorical_features": [
-                        idx
-                        for idx, col in enumerate(feature_cols)
-                        if col not in preprocess_config.continuous_var
+                        idx for idx, col in enumerate(feature_cols) if col not in preprocess_config.continuous_var
                     ]
                 }
                 if len(over_sampler_kw["categorical_features"]) == len(feature_cols):
                     over_sampler = "smoten"
-                    warnings.warn(
-                        "No categorical features are provided, switched to `SMOTEN`"
-                    )
+                    warnings.warn("No categorical features are provided, switched to `SMOTEN`")
                     over_sampler_kw.pop("categorical_features")
             else:
                 over_sampler_kw = {}
@@ -452,9 +408,7 @@ def get_training_data(
         return X_train, y_train, X_test, y_test, feature_list
     elif return_dtype.lower() == "pd":
         if feature_config.get("over_sampler", None) is not None:
-            warnings.warn(
-                "Over sampling is not supported when return_dtype is `pd.DataFrame`"
-            )
+            warnings.warn("Over sampling is not supported when return_dtype is `pd.DataFrame`")
         return df_train, df_test, feature_list
     else:
         raise ValueError(f"{return_dtype} is not supported")
@@ -528,9 +482,7 @@ def get_seizure_risk(
         mat = df_risk.loc[[c, "其他"]].values
         n_positive, n_negative = mat[0, :]
         risk = n_positive / (n_positive + n_negative)
-        confidence_interval = compute_confidence_interval(
-            n_positive, n_positive + n_negative, ci, ci_type
-        ).astuple()
+        confidence_interval = compute_confidence_interval(n_positive, n_positive + n_negative, ci, ci_type).astuple()
         ret_val[c] = {
             "risk": risk,
             "confidence_interval": confidence_interval,

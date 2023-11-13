@@ -7,9 +7,12 @@ from typing import Optional
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from sklearn.metrics import roc_auc_score
+from sklearn.utils.class_weight import compute_class_weight
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR
+from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
 from transformers import (
     get_constant_schedule,
     get_constant_schedule_with_warmup,
@@ -18,16 +21,13 @@ from transformers import (
     get_linear_schedule_with_warmup,
     get_polynomial_decay_schedule_with_warmup,
 )
-from sklearn.metrics import roc_auc_score
-from sklearn.utils.class_weight import compute_class_weight
-from tqdm.auto import tqdm
+
+from config import CFG
+from metrics import ClassificationMetrics
+from utils import ReprMixin, get_kwargs
 
 from .dataset import SeizureDataset
 from .model import SeizureMLP
-from utils import ReprMixin, get_kwargs
-from metrics import ClassificationMetrics
-from config import CFG
-
 
 __all__ = [
     "SeizureTrainer",
@@ -109,9 +109,7 @@ class SeizureTrainer(ReprMixin):
         )
 
         # setup model
-        self.device = device or torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
+        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model_config = model_config or {}
         assert set(model_config.keys()) <= set(
             get_kwargs(model_cls)
@@ -125,11 +123,7 @@ class SeizureTrainer(ReprMixin):
         # setup loss function
         all_y = torch.cat([train_dataset.tensors[1], val_dataset.tensors[1]])
         class_weights = (
-            torch.from_numpy(
-                compute_class_weight(
-                    "balanced", classes=all_y.unique().numpy(), y=all_y.numpy()
-                )
-            )
+            torch.from_numpy(compute_class_weight("balanced", classes=all_y.unique().numpy(), y=all_y.numpy()))
             .float()
             .to(self.device)
         )
@@ -146,9 +140,7 @@ class SeizureTrainer(ReprMixin):
             self.model.parameters(), **self.train_config.optimizer_kw
         )
         if "constant" not in self.train_config.scheduler:
-            self.train_config.scheduler_kw.num_training_steps = (
-                self.train_config.epochs * len(self.train_dataloader)
-            )
+            self.train_config.scheduler_kw.num_training_steps = self.train_config.epochs * len(self.train_dataloader)
         self.scheduler = SeizureTrainer.get_lr_scheduler(
             self.optimizer, self.train_config.scheduler, self.train_config.scheduler_kw
         )
@@ -186,20 +178,12 @@ class SeizureTrainer(ReprMixin):
                     self.best_epoch = epoch
                     self.best_state_dict = deepcopy(self.model.state_dict())
                 pbar.set_postfix_str(f"epoch_loss: {epoch_loss:.4f}")
-                pbar.set_postfix_str(
-                    f"best_metric ({self.train_config.monitor}): {self.best_metric:.4f}"
-                )
+                pbar.set_postfix_str(f"best_metric ({self.train_config.monitor}): {self.best_metric:.4f}")
                 self.csv_logger = self.csv_logger.append(metrics, ignore_index=True)
                 # early stopping callback
-                if (
-                    self.best_metric - metrics[self.train_config.monitor]
-                    <= self.train_config.early_stopping_min_delta
-                ):
+                if self.best_metric - metrics[self.train_config.monitor] <= self.train_config.early_stopping_min_delta:
                     pseudo_best_epoch = epoch
-                if (
-                    epoch - pseudo_best_epoch
-                    >= self.train_config.early_stopping_patience
-                ):
+                if epoch - pseudo_best_epoch >= self.train_config.early_stopping_patience:
                     print(f"Early stopping triggered at epoch {epoch}")
                     pbar.close()
                     break
@@ -209,9 +193,7 @@ class SeizureTrainer(ReprMixin):
         """ """
         self.model.eval()
         y_true = torch.cat([y for _, y in self.val_dataloader], dim=0).to(self.device)
-        y_pred = torch.cat(
-            [self.model(x.to(self.device)) for x, _ in self.val_dataloader], dim=0
-        )
+        y_pred = torch.cat([self.model(x.to(self.device)) for x, _ in self.val_dataloader], dim=0)
         metrics = {}
         metrics["val_loss"] = self.criterion(y_pred, y_true).item()
         y_prob = torch.softmax(y_pred, dim=1).cpu().numpy()

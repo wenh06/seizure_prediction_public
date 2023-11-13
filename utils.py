@@ -1,21 +1,20 @@
 """
 """
 
-import re
-import warnings
 import inspect
+import re
 import signal
-from copy import deepcopy
+import warnings
 from collections import Counter
 from contextlib import contextmanager
+from copy import deepcopy
 from functools import reduce
-from typing import Optional, Union, Sequence, Tuple, Callable, Dict, List, Any
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from config import DEFAULTS
-
 
 __all__ = [
     "list_sum",
@@ -86,16 +85,9 @@ def stratified_train_test_split(
     lie in the test set as well.
 
     """
-    invalid_cols = [
-        col
-        for col in stratified_cols
-        if not all([v > 1 for v in Counter(df[col]).values()])
-    ]
+    invalid_cols = [col for col in stratified_cols if not all([v > 1 for v in Counter(df[col]).values()])]
     if len(invalid_cols) > 0:
-        warnings.warn(
-            f"invalid columns: {invalid_cols}, "
-            "each of which has classes with only one member (row), "
-        )
+        warnings.warn(f"invalid columns: {invalid_cols}, " "each of which has classes with only one member (row), ")
     stratified_cols = [col for col in stratified_cols if col not in invalid_cols]
     df_inspection = df[stratified_cols].copy()
     for item in stratified_cols:
@@ -103,18 +95,13 @@ def stratified_train_test_split(
         entities_dict = {e: str(i) for i, e in enumerate(all_entities)}
         df_inspection[item] = df_inspection[item].apply(lambda e: entities_dict[e])
 
-    inspection_col_name = "Inspection" * (
-        max([len(c) for c in stratified_cols]) // 10 + 1
-    )
+    inspection_col_name = "Inspection" * (max([len(c) for c in stratified_cols]) // 10 + 1)
     df_inspection[inspection_col_name] = ""
     for idx, row in df_inspection.iterrows():
         cn = "-".join([row[sc] for sc in stratified_cols])
         df_inspection.loc[idx, inspection_col_name] = cn
     item_names = df_inspection[inspection_col_name].unique().tolist()
-    item_indices = {
-        n: df_inspection.index[df_inspection[inspection_col_name] == n].tolist()
-        for n in item_names
-    }
+    item_indices = {n: df_inspection.index[df_inspection[inspection_col_name] == n].tolist() for n in item_names}
     for n in item_names:
         DEFAULTS.RNG.shuffle(item_indices[n])
 
@@ -196,9 +183,7 @@ def get_kwargs(func_or_cls: Callable, kwonly: bool = False) -> Dict[str, Any]:
     if kwonly:
         return kwargs
     if fas.defaults is not None:
-        kwargs.update(
-            {k: v for k, v in zip(fas.args[-len(fas.defaults) :], fas.defaults)}
-        )
+        kwargs.update({k: v for k, v in zip(fas.args[-len(fas.defaults) :], fas.defaults)})
     return kwargs
 
 
