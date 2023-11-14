@@ -8,6 +8,10 @@ This is a copy of a private repository, but **without** the raw data and trained
 
 Risk differences analysis were performed with [`diff-binom-confint`](https://pypi.org/project/diff-binom-confint/), which is also hosted on [Github](https://github.com/DeepPSP/DBCI/).
 
+Serving API: http://43.140.244.112:11111/seizure_prediction (POST only)
+
+Online APP: http://43.140.244.112:8501/
+
 ## Data distribution
 
 <details>
