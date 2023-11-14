@@ -1,12 +1,13 @@
 import json
-from copy import deepcopy
+from copy import deepcopy  # noqa: F401
 from typing import List
 
 import pandas as pd
+import requests
 import streamlit as st
 
-from config import DataPreprocessConfig, ServingConfig
-from models import SeizurePredictionModel
+from config import DataPreprocessConfig, ServingConfig  # noqa: F401
+from models import SeizurePredictionModel  # noqa: F401
 
 st.set_page_config(
     page_title="Seizure Prediction",
@@ -15,14 +16,34 @@ st.set_page_config(
 )
 
 
-@st.cache_resource
-def get_model():
-    serving_config = deepcopy(ServingConfig)
-    loaded_model = SeizurePredictionModel.from_file(serving_config.model_path)
-    return loaded_model
+FLASK_SERVING_URL = "http://43.140.244.112:11111/seizure_prediction"
 
 
-model = get_model()
+def fetch_prediction(data: List[dict]) -> dict:
+    try:
+        response = requests.post(
+            url=FLASK_SERVING_URL,
+            json=data,
+        )
+        response.raise_for_status()
+        result = response.json()
+    except Exception as e:
+        result = {
+            "code": 4,
+            "error_type": type(e).__name__,
+            "error_msg": str(e),
+        }
+    return result
+
+
+# @st.cache_resource
+# def get_model():
+#     serving_config = deepcopy(ServingConfig)
+#     loaded_model = SeizurePredictionModel.from_file(serving_config.model_path)
+#     return loaded_model
+
+
+# model = get_model()
 
 
 st.title("Seizure Prediction")
@@ -46,6 +67,17 @@ output_format = st.sidebar.selectbox(
 )
 
 
+dbci_app_url = "https://diff-binom-confint.streamlit.app/"
+
+for _ in range(5):
+    st.sidebar.write("\n")
+st.sidebar.markdown("**For the computation of binomial confidence intervals, please visit:**")
+st.sidebar.markdown(
+    f'<p style="text-align: center;"><a href="{dbci_app_url}" target="_blank">Diff Binom CI</a></p>',
+    unsafe_allow_html=True,
+)
+
+
 def process_output(output_results: List[dict]):
     st.markdown("**Results**")
     if output_format == "JSON":
@@ -64,9 +96,9 @@ def process_output(output_results: List[dict]):
     else:  # plain text
         refined_results = ""
         for idx, item in enumerate(output_results):
-            refined_results += f"Case {idx + 1}: "
             if idx > 0:
                 refined_results += "\n"
+            refined_results += f"Case {idx + 1}: "
             if item["prediction"] == 1:
                 refined_results += "Positive"
             else:
@@ -205,7 +237,7 @@ with tab_direct:
         key="recurrent_glioma",
     )
 
-    compute_button = st.button(label="Compute", key="compute_direct")
+    compute_button = st.button(label="Predict", key="compute_direct")
 
     if compute_button:
         if maximum_diameter <= 0:
@@ -241,7 +273,13 @@ with tab_direct:
             else:
                 compute_input[f"合并症_{item}"] = 1 if item in comorbidity else 0
         try:
-            result = model.pipeline(compute_input)
+            # result = model.pipeline(compute_input)
+            result = fetch_prediction(compute_input)
+            if result["code"] != 0:
+                st.error(f"Error: {result['error_type']}: {result['error_msg']}")
+                st.stop()
+            else:
+                result = result["result"]
             process_output(result)
         except Exception as e:
             st.error(e)
@@ -254,7 +292,7 @@ with tab_json:
         height=200,
     )
 
-    compute_button = st.button(label="Compute", key="compute_input")
+    compute_button = st.button(label="Predict", key="compute_input")
 
     if compute_button:
         try:
@@ -274,7 +312,13 @@ with tab_json:
             st.stop()
 
         try:
-            result = model.pipeline(data)
+            # result = model.pipeline(data)
+            result = fetch_prediction(data)
+            if result["code"] != 0:
+                st.error(f"Error: {result['error_type']}: {result['error_msg']}")
+                st.stop()
+            else:
+                result = result["result"]
             process_output(result)
         except Exception as e:
             st.error(e)
@@ -287,7 +331,7 @@ with tab_upload:
         type=["csv", "xlsx", "json"],
     )
 
-    compute_button = st.button(label="Compute", key="compute_upload")
+    compute_button = st.button(label="Predict", key="compute_upload")
 
     if compute_button:
 
@@ -311,21 +355,18 @@ with tab_upload:
             st.stop()
 
         try:
-            result = model.pipeline(data)
+            # result = model.pipeline(data)
+            result = fetch_prediction(data)
+            if result["code"] != 0:
+                st.error(f"Error: {result['error_type']}: {result['error_msg']}")
+                st.stop()
+            else:
+                result = result["result"]
             process_output(result)
         except Exception as e:
             st.error(e)
             st.stop()
 
 
-dbci_app_url = "https://diff-binom-confint.streamlit.app/"
-
-st.markdown("**For the computation of binomial confidence intervals, please visit:**")
-st.markdown(
-    f'<p style="text-align: center;"><a href="{dbci_app_url}" target="_blank">Diff Binom CI</a></p>',
-    unsafe_allow_html=True,
-)
-
-
 # run command:
-# nohup streamlit run streamlit_app.py  > .logs/app.log 2>&1 & echo $! > .logs/app.pid
+# nohup streamlit run streamlit_app.py  > log/app.log 2>&1 & echo $! > log/app.pid
