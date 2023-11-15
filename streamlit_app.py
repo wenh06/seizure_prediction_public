@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 import streamlit as st
 
-from config import DataPreprocessConfig, ServingConfig  # noqa: F401
+from config import DataPreprocessConfig, ServingConfig
 from models import SeizurePredictionModel  # noqa: F401
 
 st.set_page_config(
@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 
-FLASK_SERVING_URL = "http://43.140.244.112:11111/seizure_prediction"
+FLASK_SERVING_URL = f"http://{ServingConfig.public_ip}:{ServingConfig.port}/{ServingConfig.name}"
 
 
 def fetch_prediction(data: List[dict]) -> dict:

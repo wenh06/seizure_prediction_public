@@ -581,6 +581,11 @@ FeatureSelectionConfig.sequential = CFG(
 
 ServingConfig = CFG()
 ServingConfig.model_path = DEFAULTS.SAVE_DIR / "spm_rf_TDSB_drop.pkl"
+ServingConfig.public_domain = None
+ServingConfig.public_ip = "43.140.244.112"
+ServingConfig.internal_ip = "0.0.0.0"
+ServingConfig.port = 11111
+ServingConfig.name = "seizure_prediction"
 
 
 clf_metric_aliases = CFG(

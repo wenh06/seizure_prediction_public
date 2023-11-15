@@ -26,9 +26,8 @@ def hello_world():
     return "<p>Seizure Prediction APP</p>"
 
 
-@seizure_app.route("/seizure_prediction", methods=["POST"])
+@seizure_app.route(f"/{_ServingConfig.name}", methods=["POST"])
 def get_seizure_prediction() -> Response:
-    """ """
     data = request.get_json(force=True)
     if data is None:
         # raise ValueError("No input data")
@@ -68,7 +67,6 @@ def get_seizure_prediction() -> Response:
 
 
 def parse_args() -> dict:
-    """ """
     parser = argparse.ArgumentParser(
         description="Seizure Prediction APP",
     )
@@ -81,14 +79,14 @@ def parse_args() -> dict:
     parser.add_argument(
         "--ip",
         type=str,
-        default="0.0.0.0",
+        default=_ServingConfig.internal_ip,
         help="IP address",
         dest="ip",
     )
     parser.add_argument(
         "--port",
         type=int,
-        default=11111,
+        default=_ServingConfig.port,
         help="Port",
         dest="port",
     )
