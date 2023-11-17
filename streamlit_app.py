@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy  # noqa: F401
+from pathlib import Path
 from typing import List
 
 import pandas as pd
@@ -34,6 +35,15 @@ def fetch_prediction(data: List[dict]) -> dict:
             "error_msg": str(e),
         }
     return result
+
+
+@st.cache_data
+def get_example_json_input():
+    file = Path(__file__).parent / "data" / "example_json_input.json"
+    return json.loads(file.read_text())
+
+
+example_json_input = get_example_json_input()
 
 
 # @st.cache_resource
@@ -328,6 +338,9 @@ with tab_json:
         except Exception as e:
             st.error(e)
             st.stop()
+    else:
+        st.markdown("**Example Input**" if language == "English" else "**示例输入**")
+        st.json(example_json_input, expanded=False)
 
 
 with tab_upload:
@@ -350,8 +363,16 @@ with tab_upload:
         try:
             if uploaded_file.name.endswith(".xlsx"):
                 data = pd.read_excel(uploaded_file)
+                # handle missing values to make json serializable
+                data = data.fillna("")
+                # to list of dict
+                data = data.to_dict(orient="records")
             elif uploaded_file.name.endswith(".csv"):
                 data = pd.read_csv(uploaded_file)
+                # handle missing values to make json serializable
+                data = data.fillna("")
+                # to list of dict
+                data = data.to_dict(orient="records")
             elif uploaded_file.name.endswith(".json"):
                 data = uploaded_file.read()
                 data = json.loads(data)
@@ -371,6 +392,11 @@ with tab_upload:
         except Exception as e:
             st.error(e)
             st.stop()
+
+    else:
+        st.markdown("**Example Table File**" if language == "English" else "**示例表格文件**")
+        st.dataframe(pd.DataFrame(example_json_input))
+        # st.table(pd.DataFrame(example_json_input))
 
 
 # run command:
