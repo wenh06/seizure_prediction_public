@@ -45,9 +45,6 @@ def fetch_prediction(data: List[dict]) -> dict:
 
 # model = get_model()
 
-
-st.title("Seizure Prediction")
-
 st.sidebar.title("Configuration")
 
 language = st.sidebar.selectbox(
@@ -108,7 +105,15 @@ def process_output(output_results: List[dict]):
         st.code(refined_results)
 
 
-tab_direct, tab_json, tab_upload = st.tabs(["Direct Computation", "Compute from JSON", "Compute from File"])
+if language == "English":
+    st.title("Seizure Prediction")
+
+    tab_direct, tab_json, tab_upload = st.tabs(["Direct Computation", "Compute from JSON", "Compute from File"])
+else:
+    st.title("术后癫痫预测")
+
+    tab_direct, tab_json, tab_upload = st.tabs(["直接计算", "从JSON计算", "从文件计算"])
+
 
 with tab_direct:
     gender = st.selectbox(
@@ -237,7 +242,7 @@ with tab_direct:
         key="recurrent_glioma",
     )
 
-    compute_button = st.button(label="Predict", key="compute_direct")
+    compute_button = st.button(label="Predict" if language == "English" else "预测", key="compute_direct")
 
     if compute_button:
         if maximum_diameter <= 0:
@@ -287,12 +292,12 @@ with tab_direct:
 
 with tab_json:
     data = st.text_area(
-        label="Input of JSON format",
+        label="Input of JSON format" if language == "English" else "输入数据（JSON格式）",
         value="",
         height=200,
     )
 
-    compute_button = st.button(label="Predict", key="compute_input")
+    compute_button = st.button(label="Predict" if language == "English" else "预测", key="compute_input")
 
     if compute_button:
         try:
@@ -331,7 +336,7 @@ with tab_upload:
         type=["csv", "xlsx", "json"],
     )
 
-    compute_button = st.button(label="Predict", key="compute_upload")
+    compute_button = st.button(label="Predict" if language == "English" else "预测", key="compute_upload")
 
     if compute_button:
 
