@@ -218,6 +218,8 @@ DataPreprocessConfig.zh2en_mapping = {
     "术后是否用药": "IsDrugAfterSurgery",
     "用药改变": "MedicationChange",
 }
+_tmp_dict = {f"WHO{idx}级": f"WHO{idx}" for idx in ["I", "II", "III", "IV"]}
+DataPreprocessConfig.zh2en_mapping.update(deepcopy(_tmp_dict))
 _tmp_dict = {}
 for k, v in DataPreprocessConfig.zh2en_mapping.items():
     if "_" in k:
