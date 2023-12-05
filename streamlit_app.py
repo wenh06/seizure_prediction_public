@@ -5,6 +5,7 @@ from typing import List, Tuple
 import pandas as pd
 import requests
 import streamlit as st
+from packaging import version
 
 from config import DataPreprocessConfig, ServingConfig
 
@@ -146,7 +147,10 @@ else:
 
 
 with tab_direct:
-    form = st.form(key="input_form")
+    form_kw = dict(key="input_form")
+    if version.parse(st.__version__) >= version.parse("1.29.0"):
+        form_kw["border"] = False
+    form = st.form(**form_kw)
     gender = form.selectbox(
         label="Gender" if language == "English" else "性别",
         options=["Male", "Female"] if language == "English" else ["男", "女"],
