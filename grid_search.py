@@ -148,7 +148,11 @@ class GridSearch(ReprMixin):
         cache_key = self._get_cache_key(model_name, feature_set, cv, experiment_tag)
 
         if cv is None:
-            (self.best_clf, self.best_params, self.best_score,) = _perform_grid_search_no_cv(
+            (
+                self.best_clf,
+                self.best_params,
+                self.best_score,
+            ) = _perform_grid_search_no_cv(
                 model_name,
                 self.grid_search_config[model_name],
                 self.X_train,
@@ -175,7 +179,12 @@ class GridSearch(ReprMixin):
 
             return self.best_clf, self.best_params, self.best_score
         else:
-            (self.best_clf, self.best_params, self.best_score, self.test_score,) = _perform_grid_search_cv(
+            (
+                self.best_clf,
+                self.best_params,
+                self.best_score,
+                self.test_score,
+            ) = _perform_grid_search_cv(
                 model_name,
                 self.grid_search_config[model_name],
                 self.X_train,

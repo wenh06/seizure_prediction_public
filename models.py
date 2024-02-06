@@ -149,7 +149,6 @@ def _find_optimal_threshold(y_train: np.ndarray, y_prob: np.ndarray, interval: S
 
 
 class SeizurePredictionModel(ReprMixin):
-
     __name__ = "SeizurePredictionModel"
 
     def __init__(
