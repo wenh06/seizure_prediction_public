@@ -66,14 +66,23 @@ output_format = st.sidebar.selectbox(
 
 
 dbci_app_url = "https://diff-binom-confint.streamlit.app/"
+dbci_app_label = "Diff Binom CI APP"
+dbci_app_icon = "🚀"
 
-for _ in range(5):
+for _ in range(7):
     st.sidebar.write("\n")
 st.sidebar.markdown("**For the computation of binomial confidence intervals, please visit:**")
-st.sidebar.markdown(
-    f'<p style="text-align: center;"><a href="{dbci_app_url}" target="_blank">Diff Binom CI</a></p>',
-    unsafe_allow_html=True,
-)
+if version.parse(st.__version__) < version.parse("1.31.0"):
+    st.sidebar.markdown(
+        f'<p style="text-align: center;"><a href="{dbci_app_url}" target="_blank">{dbci_app_label}</a></p>',
+        unsafe_allow_html=True,
+    )
+else:
+    st.sidebar.page_link(
+        page=dbci_app_url,
+        label=dbci_app_label,
+        icon=dbci_app_icon,
+    )
 
 
 def process_output(output_results: List[dict]) -> None:
