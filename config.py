@@ -22,26 +22,28 @@ __all__ = [
 
 
 class CFG(dict):
-    """
-    this class is created in order to renew the `update` method,
-    to fit the hierarchical structure of configurations
+    """This class is created in order to renew the :meth:`update` method,
+    to fit the hierarchical structure of configurations.
 
     Examples
     --------
-    >>> c = CFG(hehe={"a":1,"b":2})
-    >>> c.update(hehe={"a":-1})
+    >>> c = CFG(hehe={"a": 1, "b": 2})
+    >>> c.update(hehe={"a": [-1]})
     >>> c
-    {'hehe': {'a': -1, 'b': 2}}
-    >>> c.__update__(hehe={"a":-10})
+    {'hehe': {'a': [-1], 'b': 2}}
+    >>> c.update(hehe={"c": -10})
     >>> c
-    {'hehe': {'a': -10}}
+    {'hehe': {'a': [-1], 'b': 2, 'c': -10}}
+    >>> c.hehe.pop("a")
+    [-1]
+    >>> c
+    {'hehe': {'b': 2, 'c': -10}}
 
     """
 
     __name__ = "CFG"
 
     def __init__(self, *args, **kwargs) -> None:
-        """ """
         if len(args) > 1:
             raise TypeError(f"expected at most 1 arguments, got {len(args)}")
         elif len(args) == 1:
@@ -73,15 +75,14 @@ class CFG(dict):
     __setitem__ = __setattr__
 
     def update(self, new_cfg: Optional[MutableMapping] = None, **kwargs: Any) -> None:
-        """
-        the new hierarchical update method
+        """The new hierarchical update method.
 
         Parameters
         ----------
         new_cfg : MutableMapping, optional
-            the new configuration, by default None
-        kwargs : Any, optional
-            key value pairs, by default None
+            The new configuration, by default None.
+        **kwargs : dict, optional
+            Key value pairs, by default None.
 
         """
         _new_cfg = new_cfg or CFG()
@@ -100,15 +101,14 @@ class CFG(dict):
                     dict.__setitem__(self, k, _new_cfg[k])
 
     def pop(self, key: str, default: Optional[Any] = None) -> Any:
-        """
-        the updated pop method
+        """The updated pop method.
 
         Parameters
         ----------
         key : str
-            the key to pop
+            The key to pop.
         default : Any, optional
-            the default value, by default None
+            The default value, by default None.
 
         """
         if key in self:
@@ -116,11 +116,9 @@ class CFG(dict):
         return super().pop(key, default)
 
     def __repr__(self) -> str:
-        """ """
         return repr({k: v for k, v in self.items() if not callable(v)})
 
     def __str__(self) -> str:
-        """ """
         return str({k: v for k, v in self.items() if not callable(v)})
 
 

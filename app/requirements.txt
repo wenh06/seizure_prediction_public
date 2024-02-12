@@ -1,2 +1,4 @@
 streamlit
 packaging
+numpy
+scikit-learn
