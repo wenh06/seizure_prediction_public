@@ -6,4 +6,5 @@ imbalanced-learn==0.8.1
 xgboost==1.5.2
 diff-binom-confint>=0.0.10
 bib-lookup>=0.0.19
+deprecate_kwargs
 tqdm
