@@ -1,5 +1,7 @@
 # seizure_prediction
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://seizure-prediction.streamlit.app/)
+
 Seizure prediction using clinical data.
 
 This is a copy of a private repository, but **without** the raw data and trained models.
@@ -10,7 +12,7 @@ Risk differences analysis were performed with [`diff-binom-confint`](https://pyp
 
 Serving API: http://43.140.244.112:11111/seizure_prediction (POST only)
 
-Online APP: http://43.140.244.112:8501/
+Online APP: https://seizure-prediction.streamlit.app/ | http://43.140.244.112:8501/
 
 ## Data distribution
 
