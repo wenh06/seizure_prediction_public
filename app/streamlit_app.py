@@ -73,7 +73,7 @@ dbci_app_url = "https://diff-binom-confint.streamlit.app/"
 dbci_app_label = "Diff Binom CI APP"
 dbci_app_icon = "🚀"
 
-for _ in range(7):
+for _ in range(4):
     st.sidebar.write("\n")
 st.sidebar.markdown("**For the computation of binomial confidence intervals, please visit:**")
 if version.parse(st.__version__) < version.parse("1.31.0"):
@@ -86,6 +86,22 @@ else:
         page=dbci_app_url,
         label=dbci_app_label,
         icon=dbci_app_icon,
+    )
+# link to issue tracker on GitHub
+for _ in range(2):
+    # add some space
+    st.sidebar.write("\n")
+st.sidebar.markdown("**Report an issue**")
+if version.parse(st.__version__) < version.parse("1.31.0"):
+    st.sidebar.markdown(
+        '<p style="text-align: center;"><a href="https://github.com/wenh06/seizure_prediction_public/issues" target="_blank">GitHub Issue Tracker</a></p>',
+        unsafe_allow_html=True,
+    )
+else:
+    st.sidebar.page_link(
+        page="https://github.com/wenh06/seizure_prediction_public/issues",
+        label="GitHub Issue Tracker",
+        icon="🛠️",
     )
 
 
