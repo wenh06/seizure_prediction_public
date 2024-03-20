@@ -33,7 +33,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install wget
-        wget -O data/胶质瘤20220609.xlsx {{ secrets.DATA_STORAGE_PLACE_AND_PASSWORD }}
+        wget -O data/胶质瘤20220609.xlsx ${{ secrets.DATA_STORAGE_PLACE_AND_PASSWORD }}
     - name: Test with pytest
       run: |
         pytest test.py -v
