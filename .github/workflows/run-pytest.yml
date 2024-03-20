@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  DATA_DST: data/胶质瘤20220609.xlsx
+
 jobs:
   build:
 
@@ -29,14 +32,15 @@ jobs:
         python -m pip install -r requirements.txt
         python -m pip install pytest pytest-xdist # Testing packages
         python -m pip freeze
-    - name: Install wget and download secret data
-      run: |
-        sudo apt-get update
-        sudo apt-get install wget
-        wget -O data/胶质瘤20220609.xlsx ${{ secrets.DATA_STORAGE_PLACE_AND_PASSWORD }}
+    - name: Download secret data
+      uses: gacts/run-and-post-run@v1
+      with:
+        run: |
+          sudo apt-get update
+          sudo apt-get install wget
+          wget -O ${{ env.DATA_DST }} ${{ secrets.DATA_STORAGE_PLACE_AND_PASSWORD }}
+        post: |
+          rm ${{ env.DATA_DST }}
     - name: Test with pytest
       run: |
         pytest -v -s test.py
-    - name: Remove secret data
-      run: |
-        rm data/胶质瘤20220609.xlsx
