@@ -36,7 +36,7 @@ jobs:
         wget -O data/胶质瘤20220609.xlsx ${{ secrets.DATA_STORAGE_PLACE_AND_PASSWORD }}
     - name: Test with pytest
       run: |
-        pytest test.py -v
+        pytest -v -s test.py
     - name: Remove secret data
       run: |
         rm data/胶质瘤20220609.xlsx

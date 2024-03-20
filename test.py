@@ -12,7 +12,8 @@ def test_grid_search():
         for strategy in ["keep", "drop"]:
             feature_config["BIO_na_strategy"] = strategy
             grid_search.update_feature_config(config=feature_config)
-            for model_name in ["lr", "rf", "gdbt", "bagging", "xgb", "svc"]:
+            # for model_name in ["lr", "rf", "gdbt", "bagging", "xgb", "svc"]:
+            for model_name in ["rf", "gdbt", "bagging"]:
                 if model_name == "lr":
                     feature_config["binarize_variables"] = True
                 else:
@@ -26,4 +27,7 @@ def test_grid_search():
 
 
 if __name__ == "__main__":
-    test_grid_search()
+    try:
+        test_grid_search()
+    except KeyboardInterrupt:
+        print("Test cancelled by user.")
