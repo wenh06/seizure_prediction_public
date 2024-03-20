@@ -1,0 +1,42 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Test with PyTest
+
+on:
+  push:
+    branches: [ autotest ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install -r requirements.txt
+        python -m pip install pytest pytest-xdist # Testing packages
+        python -m pip freeze
+    - name: Install wget and download secret data
+      run: |
+        sudo apt-get update
+        sudo apt-get install wget
+        wget -O data/胶质瘤20220609.xlsx {{ secrets.DATA_STORAGE_PLACE_AND_PASSWORD }}
+    - name: Test with pytest
+      run: |
+        pytest test.py -v
+    - name: Remove secret data
+      run: |
+        rm data/胶质瘤20220609.xlsx
