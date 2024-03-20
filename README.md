@@ -1,6 +1,7 @@
 # seizure_prediction
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://seizure-prediction.streamlit.app/)
+[![autotest](https://github.com/wenh06/seizure_prediction_public/actions/workflows/run-pytest.yml/badge.svg?branch=autotest)](https://github.com/wenh06/seizure_prediction_public/actions/workflows/run-pytest.yml)
 
 Seizure prediction using clinical data.
 
