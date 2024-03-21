@@ -91,16 +91,16 @@ else:
 for _ in range(2):
     # add some space
     st.sidebar.write("\n")
-st.sidebar.markdown("**Report an issue**")
+st.sidebar.markdown("**:red[Report an issue]**")
 if version.parse(st.__version__) < version.parse("1.31.0"):
     st.sidebar.markdown(
-        '<p style="text-align: center;"><a href="https://github.com/wenh06/seizure_prediction_public/issues" target="_blank">GitHub Issue Tracker</a></p>',
+        '<p style="text-align:center;color:red;"><a href="https://github.com/wenh06/seizure_prediction_public/issues" target="_blank">GitHub Issue Tracker</a></p>',
         unsafe_allow_html=True,
     )
 else:
     st.sidebar.page_link(
         page="https://github.com/wenh06/seizure_prediction_public/issues",
-        label="GitHub Issue Tracker",
+        label=":red[GitHub Issue Tracker]",
         icon="🛠️",
     )
 
