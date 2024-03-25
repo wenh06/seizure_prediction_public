@@ -15,6 +15,8 @@ Serving API: http://43.140.244.112:11111/seizure_prediction (POST only)
 
 Online APP: https://seizure-prediction.streamlit.app/ | http://43.140.244.112:8501/
 
+The [Test action](.github/workflows/run-pytest.yml) runs a minimal test (demo) of the code using Github Actions.
+
 ## Data distribution
 
 <details>
