@@ -19,33 +19,20 @@ The [Test action](.github/workflows/run-pytest.yml) runs a minimal test (demo) o
 
 ## File/folder description
 
-[`app`](app) - Streamlit app.
-
-[`data`](data) - Data folder, **excluding** the raw data.
-
-[`images`](images) - Image folder containing visualizations of the data and experiment results.
-
-[`nn`](nn) - Model factory for neural networks (mainly MLP).
-
-[`config.py`](config.py) - Configuration file, including the parameters/hyperparameters for the models.
-
-[`data_processing.py`](data_processing.py) - Data processing functions.
-
-[`feature_selection.py`](feature_selection.py) - Feature selection functions.
-
-[`grid_search.py`](grid_search.py) - Grid search for hyperparameters.
-
-[`metrics.py`](metrics.py) - Evaluation metrics.
-
-[`models.py`](models.py) - Model factory for non-neural network models.
-
-[`risk_diff.py`](risk_diff.py) - Binomial risk difference analysis.
-
-[`service.py`](service.py) - Flask service for serving the model.
-
-[`utils.py`](utils.py) - Utility functions.
-
-[`viz.py`](viz.py) - Visualization functions.
+- [`app`](app) - Streamlit app.
+- [`data`](data) - Data folder, **excluding** the raw data.
+- [`images`](images) - Image folder containing visualizations of the data and experiment results.
+- [`nn`](nn) - Model factory for neural networks (mainly MLP).
+- [`config.py`](config.py) - Configuration file, including the parameters/hyperparameters for the models.
+- [`data_processing.py`](data_processing.py) - Data processing functions.
+- [`feature_selection.py`](feature_selection.py) - Feature selection functions.
+- [`grid_search.py`](grid_search.py) - Grid search for hyperparameters.
+- [`metrics.py`](metrics.py) - Evaluation metrics.
+- [`models.py`](models.py) - Model factory for non-neural network models.
+- [`risk_diff.py`](risk_diff.py) - Binomial risk difference analysis.
+- [`service.py`](service.py) - Flask service for serving the model.
+- [`utils.py`](utils.py) - Utility functions.
+- [`viz.py`](viz.py) - Visualization functions.
 
 There are also docker files for building the containers for different purposes, and requirements files along with them.
 
