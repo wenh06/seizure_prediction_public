@@ -195,7 +195,11 @@ with tab_direct:
     )
     extent_of_resection = form.selectbox(
         label="Extent of Resection" if language == "English" else "手术切除方式",
-        options=["Gross Total", "Subtotal", "Partial"] if language == "English" else ["部分切除", "大部切除", "次全切", "近全切", "全切"],
+        options=(
+            ["Gross Total", "Subtotal", "Partial"]
+            if language == "English"
+            else ["部分切除", "大部切除", "次全切", "近全切", "全切"]
+        ),
         key="extent_of_resection",
     )
     grading_WHO = form.selectbox(
@@ -374,7 +378,9 @@ def process_json_input(json_input: List[dict]) -> Tuple[List[dict], bool]:
     json_input = input_en2zh(json_input)
     for medical_case in json_input:
         if "C肿瘤最大直径" not in medical_case:
-            medical_case["C肿瘤最大直径"] = "<5" if medical_case["肿瘤大小"] is not None and medical_case["肿瘤大小"] < 5 else ">=5"
+            medical_case["C肿瘤最大直径"] = (
+                "<5" if medical_case["肿瘤大小"] is not None and medical_case["肿瘤大小"] < 5 else ">=5"
+            )
 
     return json_input, True
 
@@ -450,7 +456,9 @@ def process_uploaded_input(uploaded_file) -> Tuple[List[dict], bool]:
     data = input_en2zh(data)
     for medical_case in data:
         if "C肿瘤最大直径" not in medical_case:
-            medical_case["C肿瘤最大直径"] = "<5" if medical_case["肿瘤大小"] is not None and medical_case["肿瘤大小"] < 5 else ">=5"
+            medical_case["C肿瘤最大直径"] = (
+                "<5" if medical_case["肿瘤大小"] is not None and medical_case["肿瘤大小"] < 5 else ">=5"
+            )
 
     return data, True
 

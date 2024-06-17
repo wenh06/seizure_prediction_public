@@ -43,4 +43,4 @@ jobs:
           rm ${{ env.DATA_DST }}
     - name: Test with pytest
       run: |
-        pytest -v -s test.py
+        pytest -vv -s test.py

@@ -150,7 +150,8 @@ def gen_seizure_risk_diff_TDSB_ext(
         for age_group in df_data.年龄段.unique()
     }
     n_positive = {
-        age_group: df_data[df_data.年龄段 == age_group][DataPreprocessConfig.y_col].sum() for age_group in df_data.年龄段.unique()
+        age_group: df_data[df_data.年龄段 == age_group][DataPreprocessConfig.y_col].sum()
+        for age_group in df_data.年龄段.unique()
     }
     seizure_risk = get_seizure_risk(df_data=df_data, col="年龄段", positive_class=1, negative_class=0)
     seizure_risk_diff = get_seizure_risk_difference(
@@ -180,9 +181,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[age_group]['train']}/{n_affected[age_group]['test']}",
                 f"{n_positive[age_group]}",
                 f"{seizure_risk[age_group]['risk']:.1%} (from {seizure_risk[age_group]['confidence_interval'][0]:.1%} to {seizure_risk[age_group]['confidence_interval'][1]:.1%})",
-                f"{seizure_risk_diff[age_group]['risk_difference']:.1%} (from {seizure_risk_diff[age_group]['confidence_interval'][0]:.1%} to {seizure_risk_diff[age_group]['confidence_interval'][1]:.1%})"
-                if age_group != ref_group
-                else "REF",
+                (
+                    f"{seizure_risk_diff[age_group]['risk_difference']:.1%} (from {seizure_risk_diff[age_group]['confidence_interval'][0]:.1%} to {seizure_risk_diff[age_group]['confidence_interval'][1]:.1%})"
+                    if age_group != ref_group
+                    else "REF"
+                ),
             ]
         )
         ret_dict["Age"][age_group + (Ref_indicator if age_group == ref_group else "")] = {
@@ -198,9 +201,9 @@ def gen_seizure_risk_diff_TDSB_ext(
             },
             "seizure_risk_difference": {
                 "risk_difference": seizure_risk_diff[age_group]["risk_difference"] if age_group != ref_group else 0,
-                "confidence_interval": seizure_risk_diff[age_group]["confidence_interval"]
-                if age_group != ref_group
-                else (0, 0),
+                "confidence_interval": (
+                    seizure_risk_diff[age_group]["confidence_interval"] if age_group != ref_group else (0, 0)
+                ),
             },
         }
 
@@ -239,9 +242,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[gender]['train']}/{n_affected[gender]['test']}",
                 f"{n_positive[gender]}",
                 f"{seizure_risk[gender]['risk']:.1%} (from {seizure_risk[gender]['confidence_interval'][0]:.1%} to {seizure_risk[gender]['confidence_interval'][1]:.1%})",
-                f"{seizure_risk_diff[gender]['risk_difference']:.1%} (from {seizure_risk_diff[gender]['confidence_interval'][0]:.1%} to {seizure_risk_diff[gender]['confidence_interval'][1]:.1%})"
-                if gender != ref_group
-                else "REF",
+                (
+                    f"{seizure_risk_diff[gender]['risk_difference']:.1%} (from {seizure_risk_diff[gender]['confidence_interval'][0]:.1%} to {seizure_risk_diff[gender]['confidence_interval'][1]:.1%})"
+                    if gender != ref_group
+                    else "REF"
+                ),
             ]
         )
         ret_dict["Gender"][gender + (Ref_indicator if gender == ref_group else "")] = {
@@ -314,9 +319,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[tumor_zone]['train']}/{n_affected[tumor_zone]['test']}",
                 f"{n_positive[tumor_zone]}",
                 f"{n_positive[tumor_zone] / n_affected[tumor_zone]['total']:.1%} (from {seizure_risk_confint[0]:.1%} to {seizure_risk_confint[1]:.1%})",
-                f"{n_positive[tumor_zone] / n_affected[tumor_zone]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
-                if tumor_zone != ref_group
-                else "REF",
+                (
+                    f"{n_positive[tumor_zone] / n_affected[tumor_zone]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
+                    if tumor_zone != ref_group
+                    else "REF"
+                ),
             ]
         )
         ret_dict["肿瘤分区"][tumor_zone + (Ref_indicator if tumor_zone == ref_group else "")] = {
@@ -331,10 +338,12 @@ def gen_seizure_risk_diff_TDSB_ext(
                 "confidence_interval": seizure_risk_confint,
             },
             "seizure_risk_difference": {
-                "risk_difference": n_positive[tumor_zone] / n_affected[tumor_zone]["total"]
-                - n_positive[ref_group] / n_affected[ref_group]["total"]
-                if tumor_zone != ref_group
-                else 0,
+                "risk_difference": (
+                    n_positive[tumor_zone] / n_affected[tumor_zone]["total"]
+                    - n_positive[ref_group] / n_affected[ref_group]["total"]
+                    if tumor_zone != ref_group
+                    else 0
+                ),
                 "confidence_interval": seizure_risk_diff_confint if tumor_zone != ref_group else (0, 0),
             },
         }
@@ -354,7 +363,8 @@ def gen_seizure_risk_diff_TDSB_ext(
         for who_grade in df_data.病理分级.unique()
     }
     n_positive = {
-        who_grade: df_data[df_data.病理分级 == who_grade][DataPreprocessConfig.y_col].sum() for who_grade in df_data.病理分级.unique()
+        who_grade: df_data[df_data.病理分级 == who_grade][DataPreprocessConfig.y_col].sum()
+        for who_grade in df_data.病理分级.unique()
     }
     seizure_risk = get_seizure_risk(df_data=df_data, col="病理分级", positive_class=1, negative_class=0)
     seizure_risk_diff = get_seizure_risk_difference(
@@ -376,9 +386,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[who_grade]['train']}/{n_affected[who_grade]['test']}",
                 f"{n_positive[who_grade]}",
                 f"{seizure_risk[who_grade]['risk']:.1%} (from {seizure_risk[who_grade]['confidence_interval'][0]:.1%} to {seizure_risk[who_grade]['confidence_interval'][1]:.1%})",
-                f"{seizure_risk_diff[who_grade]['risk_difference']:.1%} (from {seizure_risk_diff[who_grade]['confidence_interval'][0]:.1%} to {seizure_risk_diff[who_grade]['confidence_interval'][1]:.1%})"
-                if who_grade != ref_group
-                else "REF",
+                (
+                    f"{seizure_risk_diff[who_grade]['risk_difference']:.1%} (from {seizure_risk_diff[who_grade]['confidence_interval'][0]:.1%} to {seizure_risk_diff[who_grade]['confidence_interval'][1]:.1%})"
+                    if who_grade != ref_group
+                    else "REF"
+                ),
             ]
         )
         ret_dict["病理分级"][str(who_grade) + (Ref_indicator if who_grade == ref_group else "")] = {
@@ -394,9 +406,9 @@ def gen_seizure_risk_diff_TDSB_ext(
             },
             "seizure_risk_difference": {
                 "risk_difference": seizure_risk_diff[who_grade]["risk_difference"] if who_grade != ref_group else 0,
-                "confidence_interval": seizure_risk_diff[who_grade]["confidence_interval"]
-                if who_grade != ref_group
-                else (0, 0),
+                "confidence_interval": (
+                    seizure_risk_diff[who_grade]["confidence_interval"] if who_grade != ref_group else (0, 0)
+                ),
             },
         }
 
@@ -448,9 +460,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[patho_class]['train']}/{n_affected[patho_class]['test']}",
                 f"{n_positive[patho_class]}",
                 f"{seizure_risk[patho_class]['risk']:.1%} (from {seizure_risk[patho_class]['confidence_interval'][0]:.1%} to {seizure_risk[patho_class]['confidence_interval'][1]:.1%})",
-                f"{seizure_risk_diff[patho_class]['risk_difference']:.1%} (from {seizure_risk_diff[patho_class]['confidence_interval'][0]:.1%} to {seizure_risk_diff[patho_class]['confidence_interval'][1]:.1%})"
-                if patho_class != ref_group
-                else "REF",
+                (
+                    f"{seizure_risk_diff[patho_class]['risk_difference']:.1%} (from {seizure_risk_diff[patho_class]['confidence_interval'][0]:.1%} to {seizure_risk_diff[patho_class]['confidence_interval'][1]:.1%})"
+                    if patho_class != ref_group
+                    else "REF"
+                ),
             ]
         )
         ret_dict["病理分型粗"][patho_class + (Ref_indicator if patho_class == ref_group else "")] = {
@@ -466,9 +480,9 @@ def gen_seizure_risk_diff_TDSB_ext(
             },
             "seizure_risk_difference": {
                 "risk_difference": seizure_risk_diff[patho_class]["risk_difference"] if patho_class != ref_group else 0,
-                "confidence_interval": seizure_risk_diff[patho_class]["confidence_interval"]
-                if patho_class != ref_group
-                else (0, 0),
+                "confidence_interval": (
+                    seizure_risk_diff[patho_class]["confidence_interval"] if patho_class != ref_group else (0, 0)
+                ),
             },
         }
 
@@ -521,9 +535,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                     f"{n_affected[comorbidity]['train']}/{n_affected[comorbidity]['test']}",
                     f"{n_positive[comorbidity]}",
                     f"{n_positive[comorbidity] / n_affected[comorbidity]['total']:.1%} (from {seizure_risk_confint[0]:.1%} to {seizure_risk_confint[1]:.1%})",
-                    f"{n_positive[comorbidity] / n_affected[comorbidity]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
-                    if comorbidity != ref_group
-                    else "REF",
+                    (
+                        f"{n_positive[comorbidity] / n_affected[comorbidity]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
+                        if comorbidity != ref_group
+                        else "REF"
+                    ),
                 ]
             )
             ret_dict["合并症"][comorbidity + (Ref_indicator if comorbidity == ref_group else "")] = {
@@ -538,10 +554,12 @@ def gen_seizure_risk_diff_TDSB_ext(
                     "confidence_interval": seizure_risk_confint,
                 },
                 "seizure_risk_difference": {
-                    "risk_difference": n_positive[comorbidity] / n_affected[comorbidity]["total"]
-                    - n_positive[ref_group] / n_affected[ref_group]["total"]
-                    if comorbidity != ref_group
-                    else 0,
+                    "risk_difference": (
+                        n_positive[comorbidity] / n_affected[comorbidity]["total"]
+                        - n_positive[ref_group] / n_affected[ref_group]["total"]
+                        if comorbidity != ref_group
+                        else 0
+                    ),
                     "confidence_interval": seizure_risk_diff_confint if comorbidity != ref_group else (0, 0),
                 },
             }
@@ -588,9 +606,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                         f"{n_affected[group]['train']}/{n_affected[group]['test']}",
                         f"{n_positive[group]}",
                         f"{n_positive[group] / n_affected[group]['total']:.1%} (from {seizure_risk_confint[0]:.1%} to {seizure_risk_confint[1]:.1%})",
-                        f"{n_positive[group] / n_affected[group]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
-                        if group != ref_group
-                        else "REF",
+                        (
+                            f"{n_positive[group] / n_affected[group]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
+                            if group != ref_group
+                            else "REF"
+                        ),
                     ]
                 )
                 ret_dict[comorbidity][group + (Ref_indicator if group == ref_group else "")] = {
@@ -605,10 +625,12 @@ def gen_seizure_risk_diff_TDSB_ext(
                         "confidence_interval": seizure_risk_confint,
                     },
                     "seizure_risk_difference": {
-                        "risk_difference": n_positive[group] / n_affected[group]["total"]
-                        - n_positive[ref_group] / n_affected[ref_group]["total"]
-                        if group != ref_group
-                        else 0,
+                        "risk_difference": (
+                            n_positive[group] / n_affected[group]["total"]
+                            - n_positive[ref_group] / n_affected[ref_group]["total"]
+                            if group != ref_group
+                            else 0
+                        ),
                         "confidence_interval": seizure_risk_diff_confint if group != ref_group else (0, 0),
                     },
                 }
@@ -658,9 +680,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[resection_method]['train']}/{n_affected[resection_method]['test']}",
                 f"{n_positive[resection_method]}",
                 f"{seizure_risk[resection_method]['risk']:.1%} (from {seizure_risk[resection_method]['confidence_interval'][0]:.1%} to {seizure_risk[resection_method]['confidence_interval'][1]:.1%})",
-                f"{seizure_risk_diff[resection_method]['risk_difference']:.1%} (from {seizure_risk_diff[resection_method]['confidence_interval'][0]:.1%} to {seizure_risk_diff[resection_method]['confidence_interval'][1]:.1%})"
-                if resection_method != ref_group
-                else "REF",
+                (
+                    f"{seizure_risk_diff[resection_method]['risk_difference']:.1%} (from {seizure_risk_diff[resection_method]['confidence_interval'][0]:.1%} to {seizure_risk_diff[resection_method]['confidence_interval'][1]:.1%})"
+                    if resection_method != ref_group
+                    else "REF"
+                ),
             ]
         )
         ret_dict["手术切除方式"][resection_method + (Ref_indicator if resection_method == ref_group else "")] = {
@@ -675,12 +699,12 @@ def gen_seizure_risk_diff_TDSB_ext(
                 "confidence_interval": seizure_risk[resection_method]["confidence_interval"],
             },
             "seizure_risk_difference": {
-                "risk_difference": seizure_risk_diff[resection_method]["risk_difference"]
-                if resection_method != ref_group
-                else 0,
-                "confidence_interval": seizure_risk_diff[resection_method]["confidence_interval"]
-                if resection_method != ref_group
-                else (0, 0),
+                "risk_difference": (
+                    seizure_risk_diff[resection_method]["risk_difference"] if resection_method != ref_group else 0
+                ),
+                "confidence_interval": (
+                    seizure_risk_diff[resection_method]["confidence_interval"] if resection_method != ref_group else (0, 0)
+                ),
             },
         }
 
@@ -722,9 +746,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[tumor_size]['train']}/{n_affected[tumor_size]['test']}",
                 f"{n_positive[tumor_size]}",
                 f"{seizure_risk[tumor_size]['risk']:.1%} (from {seizure_risk[tumor_size]['confidence_interval'][0]:.1%} to {seizure_risk[tumor_size]['confidence_interval'][1]:.1%})",
-                f"{seizure_risk_diff[tumor_size]['risk_difference']:.1%} (from {seizure_risk_diff[tumor_size]['confidence_interval'][0]:.1%} to {seizure_risk_diff[tumor_size]['confidence_interval'][1]:.1%})"
-                if tumor_size != ref_group
-                else "REF",
+                (
+                    f"{seizure_risk_diff[tumor_size]['risk_difference']:.1%} (from {seizure_risk_diff[tumor_size]['confidence_interval'][0]:.1%} to {seizure_risk_diff[tumor_size]['confidence_interval'][1]:.1%})"
+                    if tumor_size != ref_group
+                    else "REF"
+                ),
             ]
         )
         ret_dict["C肿瘤最大直径"][str(tumor_size) + (Ref_indicator if tumor_size == ref_group else "")] = {
@@ -740,9 +766,9 @@ def gen_seizure_risk_diff_TDSB_ext(
             },
             "seizure_risk_difference": {
                 "risk_difference": seizure_risk_diff[tumor_size]["risk_difference"] if tumor_size != ref_group else 0,
-                "confidence_interval": seizure_risk_diff[tumor_size]["confidence_interval"]
-                if tumor_size != ref_group
-                else (0, 0),
+                "confidence_interval": (
+                    seizure_risk_diff[tumor_size]["confidence_interval"] if tumor_size != ref_group else (0, 0)
+                ),
             },
         }
 
@@ -804,9 +830,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                     f"{n_affected[bio]['train']}/{n_affected[bio]['test']}",
                     f"{n_positive[bio]}",
                     f"{n_positive[bio] / n_affected[bio]['total']:.1%} (from {seizure_risk_confint[0]:.1%} to {seizure_risk_confint[1]:.1%})",
-                    f"{n_positive[bio] / n_affected[bio]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
-                    if bio != ref_group
-                    else "REF",
+                    (
+                        f"{n_positive[bio] / n_affected[bio]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
+                        if bio != ref_group
+                        else "REF"
+                    ),
                 ]
             )
             ret_dict[col.replace("BIO_", "")][
@@ -825,10 +853,10 @@ def gen_seizure_risk_diff_TDSB_ext(
                 },
                 "seizure_risk_difference": {
                     "risk_difference": (
-                        n_positive[bio] / n_affected[bio]["total"] - n_positive[ref_group] / n_affected[ref_group]["total"]
-                    )
-                    if bio != ref_group
-                    else 0,
+                        (n_positive[bio] / n_affected[bio]["total"] - n_positive[ref_group] / n_affected[ref_group]["total"])
+                        if bio != ref_group
+                        else 0
+                    ),
                     "confidence_interval": seizure_risk_diff_confint if bio != ref_group else (0, 0),
                 },
             }
@@ -889,9 +917,11 @@ def gen_seizure_risk_diff_TDSB_ext(
                     f"{n_affected[bio]['train']}/{n_affected[bio]['test']}",
                     f"{n_positive[bio]}",
                     f"{n_positive[bio] / n_affected[bio]['total']:.1%} (from {seizure_risk_confint[0]:.1%} to {seizure_risk_confint[1]:.1%})",
-                    f"{n_positive[bio] / n_affected[bio]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
-                    if bio != ref_group
-                    else "REF",
+                    (
+                        f"{n_positive[bio] / n_affected[bio]['total'] - n_positive[ref_group] / n_affected[ref_group]['total']:.1%} (from {seizure_risk_diff_confint[0]:.1%} to {seizure_risk_diff_confint[1]:.1%})"
+                        if bio != ref_group
+                        else "REF"
+                    ),
                 ]
             )
             ret_dict[col.replace("BIO_", "")][bio + (Ref_indicator if bio == ref_group else "")] = {
@@ -907,10 +937,10 @@ def gen_seizure_risk_diff_TDSB_ext(
                 },
                 "seizure_risk_difference": {
                     "risk_difference": (
-                        n_positive[bio] / n_affected[bio]["total"] - n_positive[ref_group] / n_affected[ref_group]["total"]
-                    )
-                    if bio != ref_group
-                    else 0,
+                        (n_positive[bio] / n_affected[bio]["total"] - n_positive[ref_group] / n_affected[ref_group]["total"])
+                        if bio != ref_group
+                        else 0
+                    ),
                     "confidence_interval": seizure_risk_diff_confint if bio != ref_group else (0, 0),
                 },
             }
@@ -948,9 +978,9 @@ def gen_seizure_risk_diff_TDSB_ext(
     elif return_type.lower() == "latex":
         rows = df.to_latex(header=False, index=False).splitlines()
         rows[0] = r"\begin{tabular}{@{\extracolsep{6pt}}llllllll@{}}"
-        rows[
-            2
-        ] = r"\multicolumn{2}{l}{Feature} & \multicolumn{3}{l}{Affected} & \multicolumn{2}{l}{Seizure Risk ($95\%$ CI)} & Seizure Risk Difference  ($95\%$ CI) \\ \cline{1-2}\cline{3-5}\cline{6-7}\cline{8-8}"
+        rows[2] = (
+            r"\multicolumn{2}{l}{Feature} & \multicolumn{3}{l}{Affected} & \multicolumn{2}{l}{Seizure Risk ($95\%$ CI)} & Seizure Risk Difference  ($95\%$ CI) \\ \cline{1-2}\cline{3-5}\cline{6-7}\cline{8-8}"
+        )
         ret_lines = "\n".join(rows)
         if not save_path.with_suffix(".tex").is_file() or overwrite:
             save_path.with_suffix(".tex").write_text(ret_lines)

@@ -307,7 +307,10 @@ def get_training_data(
     data: Optional[Union[str, Path, pd.DataFrame]] = None,
     return_dtype: str = "np",
     **kwargs: Any,
-) -> Union[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[str]], Tuple[pd.DataFrame, pd.DataFrame, List[str]],]:
+) -> Union[
+    Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[str]],
+    Tuple[pd.DataFrame, pd.DataFrame, List[str]],
+]:
     """
     Get the training data with the given configurations.
 

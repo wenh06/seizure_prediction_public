@@ -347,9 +347,11 @@ def plot_feature_permutation_importance(
             }
         )
         feature_list = [
-            zh2en_mapping[item].replace("_", "-").replace(" (cm)", "")
-            if not item.startswith("BIO_")
-            else item.replace("BIO_", "")
+            (
+                zh2en_mapping[item].replace("_", "-").replace(" (cm)", "")
+                if not item.startswith("BIO_")
+                else item.replace("BIO_", "")
+            )
             for item in feature_list
         ]
 
@@ -839,9 +841,11 @@ def plot_shap_summary(
             }
         )
         feature_list = [
-            zh2en_mapping[item].replace("_ ", "-").replace(" (cm)", "")
-            if not item.startswith("BIO_")
-            else item.replace("BIO_", "")
+            (
+                zh2en_mapping[item].replace("_ ", "-").replace(" (cm)", "")
+                if not item.startswith("BIO_")
+                else item.replace("BIO_", "")
+            )
             for item in feature_list
         ]
     shap.summary_plot(

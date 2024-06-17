@@ -204,6 +204,7 @@ except Exception:
         .. _`Searching for MobileNetV3`:
             https://arxiv.org/abs/1905.02244
         """
+
         __name__ = "Hardswish"
 
         def __init__(self):
