@@ -97,10 +97,19 @@ if version.parse(st.__version__) < version.parse("1.31.0"):
         '<p style="text-align:center;color:red;"><a href="https://github.com/wenh06/seizure_prediction_public/issues" target="_blank">GitHub Issue Tracker</a></p>',
         unsafe_allow_html=True,
     )
+    st.sidebar.markdown(
+        '<p style="text-align:center;color:red;"><a href="https://gitee.com/wenh06/seizure_prediction_public/issues" target="_blank">Gitee Issue Tracker</a></p>',
+        unsafe_allow_html=True,
+    )
 else:
     st.sidebar.page_link(
         page="https://github.com/wenh06/seizure_prediction_public/issues",
         label=":red[GitHub Issue Tracker]",
+        icon="🛠️",
+    )
+    st.sidebar.page_link(
+        page="https://gitee.com/wenh06/seizure_prediction_public/issues",
+        label=":red[Gitee Issue Tracker]",
         icon="🛠️",
     )
 
