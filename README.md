@@ -11,9 +11,9 @@ This is a copy of a private repository, but **without** the raw data and trained
 
 Risk differences analysis were conducted with [`diff-binom-confint`](https://pypi.org/project/diff-binom-confint/), which is also hosted on [Github](https://github.com/DeepPSP/DBCI/).
 
-Serving API: http://43.140.244.112:11111/seizure_prediction (POST only)
+Serving API: http://101.43.135.121:11111/seizure_prediction (POST only)
 
-Online APP: https://seizure-prediction.streamlit.app/ | http://43.140.244.112:8501/
+Online APP: http://101.43.135.121:8501/ | https://seizure-prediction.streamlit.app/
 
 The [Test action](.github/workflows/run-pytest.yml) runs a minimal test (demo) of the code using Github Actions.
 
