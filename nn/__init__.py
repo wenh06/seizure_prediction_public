@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 from .model import SeizureMLP
 from .trainer import SeizureTrainer

@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 from config import FeatureConfig
 from grid_search import GridSearch

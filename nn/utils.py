@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 from inspect import isclass
 from typing import Dict, Optional, Union
