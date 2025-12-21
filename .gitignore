@@ -131,6 +131,7 @@ dmypy.json
 
 *.ipynb
 !experiments.ipynb
+!results-collect-viz.ipynb
 
 /log
 /temp

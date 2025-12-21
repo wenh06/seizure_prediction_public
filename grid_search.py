@@ -1,14 +1,15 @@
-"""
-"""
+""" """
 
 import gzip
 import json
 import multiprocessing as mp
 import pickle
+import sys
 import warnings
 from copy import deepcopy
 from datetime import datetime
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from pathlib import Path
+from typing import Dict, List, Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -20,17 +21,17 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
     f1_score,
-    plot_confusion_matrix,
-    plot_roc_curve,
     roc_auc_score,
 )
 from sklearn.model_selection import GridSearchCV, ParameterGrid
 from tqdm.auto import tqdm
 
+from compat import plot_confusion_matrix, plot_roc_curve
 from config import CFG, DEFAULTS, DataPreprocessConfig, FeatureConfig, GridSearchConfig
 from data_processing import get_training_data
+from metrics import SeizureClassificationMetrics
 from models import _MODEL_MAP, get_model
-from utils import ReprMixin, timeout
+from utils import CrossPlatformUnpickler, ReprMixin, timeout
 
 __all__ = [
     "GridSearch",
@@ -55,18 +56,24 @@ class GridSearch(ReprMixin):
         preprocess_config: Optional[CFG] = None,
         feature_config: Optional[CFG] = None,
         cv: Optional[int] = None,
+        strict_glioma: bool = True,
     ) -> None:
         """
         Parameters
         ----------
-        grid_search_config: CFG, optional,
+        grid_search_config : CFG, optional
             Grid search configuration.
-        preprocess_config: CFG, optional,
+        preprocess_config : CFG, optional
             Data preprocessing configuration.
-        feature_config: CFG, optional,
+        feature_config : CFG, optional
             Feature engineering configuration.
-        cv: int, optional,
+        cv : int, optional
             Number of folds for cross validation.
+        strict_glioma : bool, default True
+            Whether to strictly filter glioma types.
+            If True, exclude data samples with non-glioma types,
+            e.g., those in `DataPreprocessConfig.exclude_types_zh` or
+            in `DataPreprocessConfig.exclude_types_en`.
 
         """
         if grid_search_config is None:
@@ -89,6 +96,8 @@ class GridSearch(ReprMixin):
             _feature_config = deepcopy(feature_config)
             self._feature_config = deepcopy(FeatureConfig)
             self._feature_config.update(_feature_config)
+        self.cv = cv
+        self.strict_glioma = strict_glioma
 
         self.__cache = {}
         self.X_train, self.y_train, self.X_test, self.y_test = None, None, None, None
@@ -103,38 +112,44 @@ class GridSearch(ReprMixin):
         feature_set: str = "TDSB",
         cv: Optional[int] = None,
         experiment_tag: Optional[str] = None,
+        strict_glioma: Optional[bool] = None,
     ) -> tuple:
         """
         Perform grid search.
 
         Parameters
         ----------
-        model_name: str, default "rf",
+        model_name : str, default "rf"
             Model name.
-        feature_set: str, default "TDSB",
+        feature_set : str, default "TDSB"
             Feature set name.
-        cv: int, optional,
+        cv : int, optional
             Number of folds for cross validation.
             If None, no cross validation will be performed,
             and the grid search will be performed on a fixed train-test split.
-        experiment_tag: str, optional,
+        experiment_tag : str, optional
             Tag for the experiment, used to store the results in the internal cache.
+        strict_glioma : bool, optional
+            Whether to use strict glioma filtering during data preprocessing.
+            If not provided, the value of `self.strict_glioma` will be used.
 
         Returns
         -------
-        best_clf: BaseEstimator,
+        best_clf : BaseEstimator
             Best classifier.
-        best_params: dict,
+        best_params : dict
             Best parameters for the classifier.
-        best_score: float,
+        best_score : float
             Best score for the classifier on the test set.
-        test_score: float, optional,
+        test_score : float, optional
             The score of the best classifier on the left out test set.
             If cv is None, this will not be returned.
 
         """
         feature_config = deepcopy(self.feature_config)
         feature_config.set_name = feature_set
+        if strict_glioma is None:
+            strict_glioma = self.strict_glioma
 
         (
             self.X_train,
@@ -142,7 +157,9 @@ class GridSearch(ReprMixin):
             self.X_test,
             self.y_test,
             self.__feature_list,
-        ) = get_training_data(self.preprocess_config, feature_config, feature_set)
+        ) = get_training_data(  # type: ignore
+            self.preprocess_config, feature_config, feature_set, strict_glioma=strict_glioma
+        )  # type: ignore
         feature_config.feature_list = self.feature_list
 
         cache_key = self._get_cache_key(model_name, feature_set, cv, experiment_tag)
@@ -155,10 +172,10 @@ class GridSearch(ReprMixin):
             ) = _perform_grid_search_no_cv(
                 model_name,
                 self.grid_search_config[model_name],
-                self.X_train,
-                self.y_train,
-                self.X_test,
-                self.y_test,
+                self.X_train,  # type: ignore
+                self.y_train,  # type: ignore
+                self.X_test,  # type: ignore
+                self.y_test,  # type: ignore
             )
 
             self.best_clf.preprocess_config = self.preprocess_config
@@ -187,10 +204,10 @@ class GridSearch(ReprMixin):
             ) = _perform_grid_search_cv(
                 model_name,
                 self.grid_search_config[model_name],
-                self.X_train,
-                self.y_train,
-                self.X_test,
-                self.y_test,
+                self.X_train,  # type: ignore
+                self.y_train,  # type: ignore
+                self.X_test,  # type: ignore
+                self.y_test,  # type: ignore
                 cv,
             )
 
@@ -227,7 +244,7 @@ class GridSearch(ReprMixin):
 
     @property
     def feature_list(self) -> List[str]:
-        return self.__feature_list
+        return self.__feature_list  # type: ignore
 
     def get_cache(
         self,
@@ -242,21 +259,21 @@ class GridSearch(ReprMixin):
 
         Parameters
         ----------
-        key: str, optional,
+        key : str, optional
             Key of the cached results.
             If None, the key will be generated from the other parameters.
-        model_name: str, default "rf",
+        model_name : str, default "rf"
             Model name.
-        feature_set: str, default "TDSB",
+        feature_set : str, default "TDSB"
             Feature set name.
-        cv: int, optional,
+        cv : int, optional
             Number of folds for cross validation.
-        name: str, optional,
+        name : str, optional
             Extra tag for the experiment.
 
         Returns
         -------
-        cache: dict,
+        cache : dict
             Cached grid search results.
 
         """
@@ -276,18 +293,18 @@ class GridSearch(ReprMixin):
 
         Parameters
         ----------
-        model_name: str, default "rf",
+        model_name : str, default "rf"
             Model name.
-        feature_set: str, default "TDSB",
+        feature_set : str, default "TDSB"
             Feature set name.
-        cv: int, optional,
+        cv : int, optional
             Number of folds for cross validation.
-        name: str, optional,
+        name : str, optional
             Extra tag for the experiment.
 
         Returns
         -------
-        key: str,
+        key : str
             Key for the internal cache.
 
         """
@@ -305,11 +322,11 @@ class GridSearch(ReprMixin):
 
     def update_feature_config(self, config: CFG) -> None:
         """
-        Update the feature config
+        Update the feature config.
 
         Parameters
         ----------
-        config: CFG,
+        config : CFG
             New (partial) feature config.
 
         """
@@ -321,13 +338,13 @@ class GridSearch(ReprMixin):
 
         Parameters
         ----------
-        cached_item: dict, optional,
+        cached_item : dict, optional
             Cached grid search results.
             If not provided, the current best model will be used.
 
         Returns
         -------
-        float,
+        float
             Accuracy score.
 
         """
@@ -339,22 +356,21 @@ class GridSearch(ReprMixin):
             y_pred = self.best_clf.predict(self.X_test)
         else:
             raise ValueError("No trained classifier!")
-        return accuracy_score(y_true, y_pred)
+        return accuracy_score(y_true, y_pred)  # type: ignore
 
     def confusion_matrix(self, cached_item: Optional[dict] = None) -> np.ndarray:
         """
-
         Compute the confusion matrix of the cached grid search results.
 
         Parameters
         ----------
-        cached_item: dict, optional,
+        cached_item : dict, optional
             Cached grid search results.
             If not provided, the current best model will be used.
 
         Returns
         -------
-        np.ndarray,
+        np.ndarray
             The confusion matrix.
 
         """
@@ -366,7 +382,7 @@ class GridSearch(ReprMixin):
             y_pred = self.best_clf.predict(self.X_test)
         else:
             raise ValueError("No trained classifier!")
-        return confusion_matrix(y_true, y_pred)
+        return confusion_matrix(y_true, y_pred)  # type: ignore
 
     def roc_auc_score(self, cached_item: Optional[dict] = None) -> float:
         """
@@ -374,13 +390,13 @@ class GridSearch(ReprMixin):
 
         Parameters
         ----------
-        cached_item: dict, optional,
+        cached_item : dict, optional
             Cached grid search results.
             If not provided, the current best model will be used.
 
         Returns
         -------
-        float,
+        float
             The ROC AUC score.
 
         """
@@ -392,7 +408,7 @@ class GridSearch(ReprMixin):
             y_score = self.best_clf.predict_proba(self.X_test)
         else:
             raise ValueError("No trained classifier!")
-        return roc_auc_score(y_true, y_score[:, 1])
+        return roc_auc_score(y_true, y_score[:, 1])  # type: ignore
 
     def f1_score(self, cached_item: Optional[dict] = None) -> float:
         """
@@ -400,13 +416,13 @@ class GridSearch(ReprMixin):
 
         Parameters
         ----------
-        cached_item: dict, optional,
+        cached_item : dict, optional
             Cached grid search results.
             If not provided, the current best model will be used.
 
         Returns
         -------
-        float,
+        float
             The F1 score.
 
         """
@@ -418,7 +434,7 @@ class GridSearch(ReprMixin):
             y_pred = self.best_clf.predict(self.X_test)
         else:
             raise ValueError("No trained classifier!")
-        return f1_score(y_true, y_pred)
+        return f1_score(y_true, y_pred)  # type: ignore
 
     def classification_report(self, cached_item: Optional[dict] = None) -> None:
         """
@@ -426,7 +442,7 @@ class GridSearch(ReprMixin):
 
         Parameters
         ----------
-        cached_item: dict, optional,
+        cached_item : dict, optional
             Cached grid search results.
             If not provided, the current best model will be used.
 
@@ -439,7 +455,7 @@ class GridSearch(ReprMixin):
             y_pred = self.best_clf.predict(self.X_test)
         else:
             raise ValueError("No trained classifier!")
-        print(classification_report(y_true, y_pred))
+        print(classification_report(y_true, y_pred))  # type: ignore
 
     def plot_roc_curve(self, cached_item: Optional[dict] = None) -> RocCurveDisplay:
         """
@@ -447,13 +463,13 @@ class GridSearch(ReprMixin):
 
         Parameters
         ----------
-        cached_item: dict, optional,
+        cached_item : dict, optional
             Cached grid search results.
             If not provided, the current best model will be used.
 
         Returns
         -------
-        RocCurveDisplay,
+        RocCurveDisplay
             The `sklearn` ROC curve display object.
 
         """
@@ -473,13 +489,13 @@ class GridSearch(ReprMixin):
 
         Parameters
         ----------
-        cached_item: dict, optional,
+        cached_item : dict, optional
             Cached grid search results.
             If not provided, the current best model will be used.
 
         Returns
         -------
-        ConfusionMatrixDisplay,
+        ConfusionMatrixDisplay
             The `sklearn` confusion matrix display object.
 
         """
@@ -503,7 +519,7 @@ class GridSearch(ReprMixin):
 
         Parameters
         ----------
-        with_details: bool, default False,
+        with_details : bool, default False
             Whether to return the feature set details.
             If False, only the feature set names will be returned.
 
@@ -519,27 +535,31 @@ class GridSearch(ReprMixin):
         self,
         parallel: bool = False,
         save_cache: bool = True,
-        time_limit: Union[int, float] = 2 * 3600,
+        time_limit: Union[int, float] = 4 * 3600,
+        strict_glioma: Optional[bool] = None,
     ) -> None:
         """
         Perform grid search on all models and feature sets.
 
         Parameters
         ----------
-        parallel: bool, default False,
+        parallel : bool, default False
             Whether to perform grid search in parallel.
-        save_cache: bool, default True,
+        save_cache : bool, default True
             Whether to save the grid search results to cache.
-        time_limit: int or float, default 2 * 3600,
+        time_limit : int or float, default 4 * 3600
             The time limit for each grid search.
+        strict_glioma : bool, optional
+            Whether to use strict glioma filtering during data preprocessing.
+            If not provided, the value of `self.strict_glioma` will be used.
 
         """
         if parallel:
             # sk_mlp already parallelizes
             raise Exception("Parallel search not tested yet!")
-            self._full_search_parallel(time_limit)
+            self._full_search_parallel(time_limit, strict_glioma=strict_glioma)
         else:
-            self._full_search_sequential(time_limit)
+            self._full_search_sequential(time_limit, strict_glioma=strict_glioma)
 
         # save results
         df_results = pd.DataFrame()
@@ -572,14 +592,17 @@ class GridSearch(ReprMixin):
             with gzip.GzipFile(save_path, "wb") as gz_file:
                 pickle.dump(self.__cache, gz_file)
 
-    def _full_search_sequential(self, time_limit: Union[int, float]) -> None:
+    def _full_search_sequential(self, time_limit: Union[int, float], strict_glioma: Optional[bool] = None) -> None:
         """
         Perform the full grid search sequentially.
 
         Parameters
         ----------
-        time_limit: int or float,
+        time_limit : int or float
             The time limit for each grid search, with unit in seconds.
+        strict_glioma : bool, optional
+            Whether to use strict glioma filtering during data preprocessing.
+            If not provided, the value of `self.strict_glioma` will be used.
 
         """
         for feature_set in self.list_feature_sets():
@@ -596,24 +619,29 @@ class GridSearch(ReprMixin):
                     }
                     if model_name == "lr":
                         feature_config["binarize_variables"] = True
-                    self.update_feature_config(config=feature_config)
+                    self.update_feature_config(config=feature_config)  # type: ignore
                     try:
                         with timeout(time_limit) as t:
-                            self.search(model_name, feature_set, experiment_tag=strategy)
+                            self.search(model_name, feature_set, experiment_tag=strategy, strict_glioma=strict_glioma)
                     except TimeoutError:
                         pass
 
-    def _full_search_parallel(self, time_limit: Union[int, float]) -> None:
+    def _full_search_parallel(self, time_limit: Union[int, float], strict_glioma: Optional[bool] = None) -> None:
         """NOT tested,
 
         Perform the full grid search in parallel.
 
         Parameters
         ----------
-        time_limit: int or float,
+        time_limit : int or float
             The time limit for each grid search, with unit in seconds.
+        strict_glioma : bool, optional
+            Whether to use strict glioma filtering during data preprocessing.
+            If not provided, the value of `self.strict_glioma` will be used.
 
         """
+        if strict_glioma is None:
+            strict_glioma = self.strict_glioma
         iterable, cache_keys = [], []
         for feature_set in self.list_feature_sets():
             for model_name in self.list_model_names():
@@ -638,15 +666,13 @@ class GridSearch(ReprMixin):
                         X_test,
                         y_test,
                         feature_list,
-                    ) = get_training_data(preprocess_config, feature_config, feature_set)
+                    ) = get_training_data(  # type: ignore
+                        preprocess_config, feature_config, feature_set, strict_glioma=strict_glioma
+                    )  # type: ignore
                     feature_config.feature_list = feature_list
                     iterable.append((model_name, param_grid, X_train, y_train, X_test, y_test))
                     cache_keys.append(self._get_cache_key(model_name, feature_set, cv=None, name=strategy))
-        with mp.Pool(
-            processes=max(
-                1,
-            )
-        ) as pool:
+        with mp.Pool(processes=max(1, _NUM_CPUS // 2)) as pool:
             # results consists of tuples (best_clf, best_params, best_score)
             results = pool.star_map(_perform_grid_search_no_cv, iterable)
         for idx, result in enumerate(results):
@@ -668,33 +694,39 @@ def perform_grid_search_no_cv(
     preprocess_config: Optional[CFG] = None,
     feature_config: Optional[CFG] = None,
     feature_set: str = "TDSB",
+    strict_glioma: bool = True,
 ) -> Tuple[BaseEstimator, dict, float]:
     """
     Perform grid search without cross validation on a fixed data split.
 
     Parameters
     ----------
-    model_name: str,
+    model_name : str
         The name of the model.
-    grid_search_config: CFG, optional,
+    grid_search_config : CFG, optional
         The configuration for grid search.
         If not provided, the default configuration will be used.
-    preprocess_config: CFG, optional,
+    preprocess_config : CFG, optional
         The configuration for preprocessing.
         If not provided, the default configuration will be used.
-    feature_config: CFG, optional,
+    feature_config : CFG, optional
         The configuration for feature engineering.
         If not provided, the default configuration will be used.
-    feature_set: str, default "TDSB",
+    feature_set : str, default "TDSB"
         The name of the feature set.
+    strict_glioma : bool, default True
+        Whether to strictly filter glioma types.
+        If True, exclude data samples with non-glioma types,
+        e.g., those in `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
 
     Returns
     -------
-    best_clf: BaseEstimator,
+    best_clf : BaseEstimator
         The best classifier.
-    best_params: dict,
+    best_params : dict
         The best parameters.
-    best_score: float,
+    best_score : float
         The best score on the test set.
 
     """
@@ -721,16 +753,16 @@ def perform_grid_search_no_cv(
 
     feature_config.set_name = feature_set
 
-    X_train, y_train, X_test, y_test, feature_list = get_training_data(preprocess_config, feature_config, feature_set)
+    X_train, y_train, X_test, y_test, feature_list = get_training_data(preprocess_config, feature_config, feature_set, strict_glioma=strict_glioma)  # type: ignore
     feature_config.feature_list = feature_list
 
     best_clf, best_params, best_score = _perform_grid_search_no_cv(
         model_name,
         grid_search_config[model_name],
-        X_train,
-        y_train,
-        X_test,
-        y_test,
+        X_train,  # type: ignore
+        y_train,  # type: ignore
+        X_test,  # type: ignore
+        y_test,  # type: ignore
     )
 
     best_clf.preprocess_config = preprocess_config
@@ -746,37 +778,43 @@ def perform_grid_search_cv(
     feature_config: Optional[CFG] = None,
     feature_set: str = "TDSB",
     cv: int = 5,
+    strict_glioma: bool = True,
 ) -> Tuple[BaseEstimator, dict, float, float]:
     """
     Perform grid search with cross validation.
 
     Parameters
     ----------
-    model_name: str,
+    model_name : str
         The name of the model.
-    grid_search_config: CFG, optional,
+    grid_search_config : CFG, optional
         The configuration for grid search.
         If not provided, the default configuration will be used.
-    preprocess_config: CFG, optional,
+    preprocess_config : CFG, optional
         The configuration for preprocessing.
         If not provided, the default configuration will be used.
-    feature_config: CFG, optional,
+    feature_config : CFG, optional
         The configuration for feature engineering.
         If not provided, the default configuration will be used.
-    feature_set: str, default "TDSB",
+    feature_set : str, default "TDSB"
         The name of the feature set.
-    cv: int, default 5,
+    cv : int, default 5
         The number of folds for cross validation.
+    strict_glioma : bool, default True
+        Whether to strictly filter glioma types.
+        If True, exclude data samples with non-glioma types,
+        e.g., those in `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
 
     Returns
     -------
-    best_clf: BaseEstimator,
+    best_clf : BaseEstimator
         The best classifier.
-    best_params: dict,
+    best_params : dict
         The best parameters.
-    best_score: float,
+    best_score : float
         The best score for the cross validation.
-    test_score: float,
+    test_score : float
         The score of the best classifier on the left out test set.
 
     """
@@ -803,11 +841,11 @@ def perform_grid_search_cv(
 
     feature_config.set_name = feature_set
 
-    X_train, y_train, X_test, y_test, feature_list = get_training_data(preprocess_config, feature_config, feature_set)
+    X_train, y_train, X_test, y_test, feature_list = get_training_data(preprocess_config, feature_config, feature_set, strict_glioma=strict_glioma)  # type: ignore
     feature_config.feature_list = feature_list
 
     best_clf, best_params, best_score, test_score = _perform_grid_search_cv(
-        model_name, grid_search_config[model_name], X_train, y_train, X_test, y_test, cv
+        model_name, grid_search_config[model_name], X_train, y_train, X_test, y_test, cv  # type: ignore
     )
 
     best_clf.preprocess_config = preprocess_config
@@ -831,7 +869,7 @@ def _perform_grid_search_no_cv(
     best_score = 0
     best_clf = None
     best_params = None
-    with tqdm(param_grid, desc=model_name) as pbar:
+    with tqdm(param_grid, desc=model_name, dynamic_ncols=True, mininterval=1.0) as pbar:
         for params in pbar:
             updated_params = deepcopy(params)
             # use half of the CPU cores
@@ -847,7 +885,7 @@ def _perform_grid_search_no_cv(
                 best_score = metric_score
                 best_params = params
                 best_clf = clf_gs
-    return best_clf, best_params, best_score
+    return best_clf, best_params, best_score  # type: ignore
 
 
 def _perform_grid_search_cv(
@@ -877,7 +915,7 @@ def _perform_grid_search_cv(
     best_score = gscv.best_score_
     test_score = roc_auc_score(y_val, best_clf.predict_proba(X_val)[:, 1])
 
-    return best_clf, best_params, best_score, test_score
+    return best_clf, best_params, best_score, test_score  # type: ignore
 
 
 def gather_grid_search_results(
@@ -890,17 +928,17 @@ def gather_grid_search_results(
 
     Parameters
     ----------
-    raw: bool, default False,
+    raw : bool, default False
         Whether to return the raw results.
-    model_name_map: dict, optional,
+    model_name_map : dict, optional
         The mapping from the model name to the model name to be displayed in the table.
         If not provided, the default mapping will be used.
-    sub_dirs: str or sequence of str, optional,
+    sub_dirs : str or sequence of str, optional
         The sub directories to store the results.
 
     Returns
     -------
-    results_all: pd.DataFrame,
+    results_all : pd.DataFrame
         The table of all the historical grid search results.
 
     """
@@ -926,8 +964,8 @@ def gather_grid_search_results(
     results_all.best_score = ""
     results_all["filename"] = ""
     for idx, row in results_all.iterrows():
-        results_all.at[idx, "best_score"] = [df.loc[idx, "best_score"] for df in results]
-        results_all.at[idx, "filename"] = [str(file) for file in results_csv_files]
+        results_all.at[idx, "best_score"] = np.array([df.loc[idx, "best_score"] for df in results]).tolist()  # type: ignore
+        results_all.at[idx, "filename"] = [str(file) for file in results_csv_files]  # type: ignore
     results_all.loc[:, "best_score_mean"] = results_all.best_score.apply(lambda s: np.mean(s))
     results_all.loc[:, "best_score_std"] = results_all.best_score.apply(lambda s: np.std(s))
     results_all.loc[:, "best_score_max"] = results_all.best_score.apply(lambda s: np.max(s))
@@ -936,8 +974,210 @@ def gather_grid_search_results(
     return results_all
 
 
+def gather_grid_search_metrics(
+    model_name_map: Optional[Dict[str, str]] = None,
+    sub_dirs: Optional[Union[str, Sequence[str]]] = None,
+    metrics: Optional[List[str]] = None,
+    save_filename: Optional[Union[str, Path]] = None,
+) -> Dict[str, pd.DataFrame]:
+    """
+    Gather historical results of grid search from the saved csv files that store the results.
+
+    Parameters
+    ----------
+    model_name_map : dict, optional
+        The mapping from the model name to the model name to be displayed in the table.
+        If not provided, the default mapping will be used.
+    sub_dirs : str or sequence of str, optional
+        The sub directories to store the results.
+    metrics : list of str, optional
+        The list of metrics to compute.
+        If not provided, the default metrics will be used.
+    save_filename : str or Path, optional
+        The filename (ONLY the filename, not the path) to save the results.
+        If provided, the results will be saved to the specified file.
+        Only JSON format is supported (Note: the file extension will be changed to .json).
+        This file will be saved in the DEFAULTS.SAVE_DIR / "metrics" directory.
+        If not provided, the results will not be saved.
+
+    Returns
+    -------
+    results_all : dict of pd.DataFrame
+        The table of all the historical grid search results.
+
+    """
+    if model_name_map is None:
+        model_name_map = {k: v.__name__.replace("Classifier", "") for k, v in _MODEL_MAP.items()}
+    if metrics is None:
+        metrics = "sens,spec,prec,npv,jac,acc,phi,fnr,fpr,fdr,for,plr,nlr,pt,ba,f1,fm,bm,mk,dor,auc".split(",")  # type: ignore
+
+    folder = DEFAULTS.SAVE_DIR
+    if sub_dirs is not None:
+        if isinstance(sub_dirs, str):
+            sub_dirs = [sub_dirs]
+        folders = [folder / sub_dir for sub_dir in sub_dirs]
+    else:
+        folders = [folder]
+
+    gs_files = []
+    for folder in folders:
+        gs_files.extend(folder.rglob("*.pkl.gz"))
+    print(f"Found {len(gs_files)} grid search cache files.")
+
+    metrics_manager = SeizureClassificationMetrics(subset=metrics)
+    results_all = {}
+    for gs_file in tqdm(gs_files, desc="Gathering metrics", dynamic_ncols=True, mininterval=1.0):
+        with gzip.open(gs_file, "rb") as gf:
+            gs_cache = CrossPlatformUnpickler(gf, path_resolution="string").load()  # type: ignore
+            for model_key in gs_cache:
+                if model_key not in results_all:
+                    results_all[model_key] = []
+                cached_item = gs_cache[model_key]
+                y_true = cached_item["y_test"]
+                y_pred = cached_item["best_clf"].predict_proba(cached_item["X_test"])
+                metrics_result = metrics_manager(y_true, y_pred, thr=0.5)
+                results_all[model_key].append(metrics_result)
+    for model_key in results_all:
+        # convert the list of dicts to a DataFrame
+        df_model = pd.DataFrame(results_all[model_key])
+        # and compute median, mean, std, ci_lower, ci_upper of each column (metric)
+        df_summary = pd.DataFrame(columns=df_model.columns)
+        for col in df_model.columns:
+            df_summary.loc["median", col] = df_model[col].median()
+            df_summary.loc["mean", col] = df_model[col].mean()
+            df_summary.loc["std", col] = df_model[col].std()
+            ci_lower = np.nanpercentile(df_model[col][~np.isinf(df_model[col])], 2.5)
+            ci_upper = np.nanpercentile(df_model[col][~np.isinf(df_model[col])], 97.5)
+            df_summary.loc["ci_lower", col] = ci_lower
+            df_summary.loc["ci_upper", col] = ci_upper
+        # concatenate the summary statistics to the original DataFrame
+        results_all[model_key] = pd.concat([df_model, df_summary], ignore_index=False)
+
+    if save_filename is not None:
+        save_path = DEFAULTS.SAVE_DIR / "metrics" / Path(save_filename).with_suffix(".json").name
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        write_content = {k: v.to_dict() for k, v in results_all.items()}
+        save_path.write_text(json.dumps(write_content, ensure_ascii=False))
+
+    return results_all
+
+
+def make_clf_report(
+    feature_set: Literal["TDSB", "TDB", "TDS", "TD"] = "TDSB",
+    BIO_na_strategy: Literal["keep", "drop"] = "drop",
+    metrics_file: Optional[Union[str, Path]] = None,
+    sub_dirs: Optional[Union[str, Sequence[str]]] = None,
+    metrics: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """
+    Make a classification report for all the models
+    with the given feature set and BIO_na_strategy.
+
+    Parameters
+    ----------
+    feature_set : str, default "TDSB"
+        The feature set to use.
+    BIO_na_strategy : str, default "drop"
+        The BIO_na_strategy to use.
+    metrics_file : str or Path, optional
+        The metrics file to use.
+        If provided, the metrics will be loaded from the file.
+        If not provided, the metrics will be computed from the grid search cache files.
+    sub_dirs : str or sequence of str, optional
+        The sub directories to store the results.
+        `sub_dirs` will be ignored if `metrics_file` is provided.
+        At least one of `metrics_file` and `sub_dirs` should be provided.
+    metrics : list of str, optional
+        The list of metrics to compute.
+        If not provided, the default metrics will be used.
+
+    """
+    if metrics_file is not None:
+        save_path = Path(metrics_file).with_suffix(".json")
+        if not save_path.exists():
+            save_path = DEFAULTS.SAVE_DIR / "metrics" / save_path.name
+        if not save_path.exists():
+            raise FileNotFoundError(f"Metrics file '{metrics_file}' not found!")
+        metrics_dict = {k: pd.DataFrame(v) for k, v in json.loads(save_path.read_text()).items()}
+    elif sub_dirs is not None:
+        metrics_dict = gather_grid_search_metrics(
+            sub_dirs=sub_dirs,
+            metrics=metrics,
+        )
+    else:
+        raise ValueError("At least one of `metrics_file` and `sub_dirs` should be provided.")
+
+    suffix = f"_{feature_set}_{BIO_na_strategy}"
+    clf_report = pd.DataFrame(columns="MetricFullNames,RF,GDBT,Bagging,MLP,XGB,LR".split(","))
+    model_name_map = {k.lower(): k for k in "RF,GDBT,Bagging,XGB,LR".split(",")}
+    model_name_map["sk_mlp"] = "MLP"
+    metrics_name_mapping = {
+        "auc": "area under the receiver-operater characteristic curve",
+        "sens": "sensitivity, recall, hit rate, true positive rate",
+        "spec": "specificity, selectivity, true negative rate",
+        "prec": "precision, positive predictive value",
+        "npv": "negative predictive value",
+        "jac": "jaccard index, threat score, critical success index",
+        "acc": "accuracy",
+        "phi": "phi coefficient, matthews correlation coefficient",
+        "fnr": "false negative rate, miss rate",
+        "fpr": "false positive rate, fall-out",
+        "fdr": "false discovery rate",
+        "for": "false omission rate",
+        "plr": "positive likelihood ratio",
+        "nlr": "negative likelihood ratio",
+        "pt": "prevalence threshold",
+        "ba": "balanced accuracy",
+        "f1": "f1-measure",
+        "fm": "fowlkes-mallows index",
+        "bm": "bookmaker informedness",
+        "mk": "markedness",
+        "dor": "diagnostic odds ratio",
+    }
+
+    for model_key, df_metrics in metrics_dict.items():
+        if not model_key.endswith(suffix):
+            continue
+        model_name = model_name_map.get("_".join(model_key.split("_")[:-2]).lower(), model_key)
+        for metric in metrics_name_mapping.keys():
+            if metric not in df_metrics.columns:
+                continue
+            mean_value = df_metrics.loc["mean", metric]
+            ci_lower = df_metrics.loc["ci_lower", metric]
+            ci_upper = df_metrics.loc["ci_upper", metric]
+            clf_report.loc[metric, "MetricFullNames"] = metrics_name_mapping.get(metric, metric)
+            clf_report.loc[metric, model_name] = f"{mean_value:.3f} ({ci_lower:.3f}, {ci_upper:.3f})"
+    return clf_report
+
+
 if __name__ == "__main__":
-    # nohup command
-    # nohup python grid_search.py > /dev/null 2>&1 & echo $! > ./log/gs.pid
-    gs = GridSearch()
-    gs.full_search()
+    # nohup command:
+    # run without logging output:
+    # nohup python grid_search.py [n] > /dev/null 2>&1 & echo $! > ./log/gs.pid
+    # run with logging output:
+    # nohup python grid_search.py [n] > ./log/gs.log 2>&1 & echo $! > ./log/gs.pid
+
+    if len(sys.argv) > 1:
+        try:
+            n = int(sys.argv[1])
+        except ValueError:
+            print(f"Error: '{sys.argv[1]}' is not a valid number")
+            print("Usage: python grid_search.py [n]")
+            print("\nnohup examples:")
+            print("  nohup python grid_search.py 10 > /dev/null 2>&1 & echo $! > ./log/gs.pid")
+            print("  nohup python grid_search.py 10 > ./log/gs.log 2>&1 & echo $! > ./log/gs.pid")
+            sys.exit(1)
+    else:
+        n = 1
+
+    for experiment_num in range(1, n + 1):
+        print(f"\n{'='*60}")
+        print(f"Starting experiment {experiment_num}/{n}")
+        print(f"{'='*60}")
+
+        gs = GridSearch()
+        gs.full_search()
+
+        print(f"\nCompleted experiment {experiment_num}/{n}")
+
+    print(f"\nAll {n} experiments completed!")

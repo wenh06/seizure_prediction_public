@@ -30,21 +30,21 @@ def confusion_matrix(
 
     Parameters
     ----------
-    labels: np.ndarray or Tensor,
-        binary labels, of shape: (n_samples, n_classes)
-        or indices of each label class, of shape: (n_samples,)
-    outputs: np.ndarray or Tensor,
-        binary outputs, of shape: (n_samples, n_classes)
-        or indices of each class predicted, of shape: (n_samples,)
-    num_classes: int, optional,
-        number of classes,
-        if `labels` and `outputs` are both of shape (n_samples,),
+    labels : np.ndarray or Tensor
+        Binary labels, of shape: ``(n_samples, n_classes)``,
+        or indices of each label class, of shape: ``(n_samples,)``.
+    outputs : np.ndarray or Tensor
+        Binary outputs, of shape: ``(n_samples, n_classes)``,
+        or indices of each class predicted, of shape: ``(n_samples,)``.
+    num_classes : int, optional
+        Number of classes.
+        If `labels` and `outputs` are both of shape ``(n_samples,)``,
         then `num_classes` must be specified.
 
     Returns
     -------
-    cm: np.ndarray,
-        confusion matrix, of shape: (n_classes, n_classes)
+    cm : np.ndarray
+        Confusion matrix, of shape: ``(n_classes, n_classes)``.
 
     """
     labels, outputs = cls_to_bin(labels, outputs, num_classes)
@@ -74,21 +74,21 @@ def one_vs_rest_confusion_matrix(
 
     Parameters
     ----------
-    labels: np.ndarray,
-        binary labels, of shape: (n_samples, n_classes)
-        or indices of each label class, of shape: (n_samples,)
-    outputs: np.ndarray,
-        binary outputs, of shape: (n_samples, n_classes)
-        or indices of each class predicted, of shape: (n_samples,)
-    num_classes: int, optional,
-        number of classes,
-        if `labels` and `outputs` are both of shape (n_samples,),
+    labels : np.ndarray
+        Binary labels, of shape: ``(n_samples, n_classes)``
+        or indices of each label class, of shape: ``(n_samples,)``.
+    outputs : np.ndarray
+        Binary outputs, of shape: ``(n_samples, n_classes)``
+        or indices of each class predicted, of shape: ``(n_samples,)``.
+    num_classes : int, optional,
+        Number of classes,
+        If `labels` and `outputs` are both of shape ``(n_samples,)``,
         then `num_classes` must be specified.
 
     Returns
     -------
-    ovr_cm: np.ndarray,
-        one-vs-rest confusion matrix, of shape: (n_classes, 2, 2)
+    ovr_cm : np.ndarray
+        One-vs-rest confusion matrix, of shape: ``(n_classes, 2, 2)``.
 
     """
     labels, outputs = cls_to_bin(labels, outputs, num_classes)
@@ -122,18 +122,18 @@ _METRICS_FROM_CONFUSION_MATRIX_PARAMS = """
 
     Parameters
     ----------
-    labels: np.ndarray,
-        binary labels, of shape: (n_samples, n_classes)
-        or indices of each label class, of shape: (n_samples,)
-    outputs: np.ndarray,
-        binary outputs, of shape: (n_samples, n_classes)
-        or indices of each class predicted, of shape: (n_samples,)
-    num_classes: int, optional,
-        number of classes,
-        if `labels` and `outputs` are both of shape (n_samples,),
+    labels : np.ndarray
+        Binary labels, of shape: ``(n_samples, n_classes)``
+        or indices of each label class, of shape: ``(n_samples,)``
+    outputs : np.ndarray
+        Binary outputs, of shape: ``(n_samples, n_classes)``
+        or indices of each class predicted, of shape: ``(n_samples,)``
+    num_classes : int, optional
+        Number of classes,
+        If `labels` and `outputs` are both of shape ``(n_samples,)``,
         then `num_classes` must be specified.
-    weights: np.ndarray, optional,
-        weights for each class, of shape: (n_classes,),
+    weights : np.ndarray, optional
+        Weights for each class, of shape: ``(n_classes,)``,
         used to compute macro {metric},
 """
 
@@ -151,8 +151,8 @@ def metrics_from_confusion_matrix(
     """
     Returns
     -------
-    metrics: dict,
-        metrics computed from the one-vs-rest confusion matrix
+    metrics : dict
+        Metrics computed from the one-vs-rest confusion matrix.
 
     Examples
     --------
@@ -334,15 +334,15 @@ def f_measure(
     """
     Returns
     -------
-    macro_f1: float,
-        macro F1-measure
-    f1: np.ndarray,
-        F1-measures for each class, of shape: (n_classes,)
+    macro_f1 : float
+        Macro F1-measure.
+    f1 : np.ndarray
+        F1-measures for each class, of shape: ``(n_classes,)``.
 
     """
     m = metrics_from_confusion_matrix(labels, outputs, num_classes, weights)
 
-    return m["macro_f1"], m["f1"]
+    return m["macro_f1"], m["f1"]  # type: ignore
 
 
 @add_docstring(
@@ -358,15 +358,15 @@ def sensitivity(
     """
     Returns
     -------
-    macro_sens: float,
-        macro sensitivity
-    sens: np.ndarray,
-        sensitivities for each class, of shape: (n_classes,)
+    macro_sens : float
+        Macro sensitivity.
+    sens : np.ndarray
+        Sensitivities for each class, of shape: ``(n_classes,)``.
 
     """
     m = metrics_from_confusion_matrix(labels, outputs, num_classes, weights)
 
-    return m["macro_sens"], m["sens"]
+    return m["macro_sens"], m["sens"]  # type: ignore
 
 
 # aliases
@@ -388,15 +388,15 @@ def precision(
     """
     Returns
     -------
-    macro_prec: float,
-        macro precision
-    prec: np.ndarray,
-        precisions for each class, of shape: (n_classes,)
+    macro_prec : float
+        Macro precision.
+    prec : np.ndarray
+        Precisions for each class, of shape: ``(n_classes,)``.
 
     """
     m = metrics_from_confusion_matrix(labels, outputs, num_classes, weights)
 
-    return m["macro_prec"], m["prec"]
+    return m["macro_prec"], m["prec"]  # type: ignore
 
 
 # aliases
@@ -416,15 +416,15 @@ def specificity(
     """
     Returns
     -------
-    macro_spec: float,
-        macro specificity
-    spec: np.ndarray,
-        specificities for each class, of shape: (n_classes,)
+    macro_spec : float
+        Macro specificity.
+    spec : np.ndarray
+        Specificities for each class, of shape: ``(n_classes,)``.
 
     """
     m = metrics_from_confusion_matrix(labels, outputs, num_classes, weights)
 
-    return m["macro_spec"], m["spec"]
+    return m["macro_spec"], m["spec"]  # type: ignore
 
 
 # aliases
@@ -445,19 +445,19 @@ def auc(
     """
     Returns
     -------
-    macro_auroc: float,
-        macro AUROC
-    macro_auprc: float,
-        macro AUPRC
-    auprc: np.ndarray,
-        AUPRCs for each class, of shape: (n_classes,)
-    auprc: np.ndarray,
-        AUPRCs for each class, of shape: (n_classes,)
+    macro_auroc : float
+        Macro AUROC.
+    macro_auprc : float
+        Macro AUPRC.
+    auprc : np.ndarray
+        AUPRCs for each class, of shape: ``(n_classes,)``.
+    auprc : np.ndarray
+        AUPRCs for each class, of shape: ``(n_classes,)``.
 
     """
     m = metrics_from_confusion_matrix(labels, outputs, num_classes, weights)
 
-    return m["macro_auroc"], m["macro_auprc"], m["auroc"], m["auprc"]
+    return m["macro_auroc"], m["macro_auprc"], m["auroc"], m["auprc"]  # type: ignore
 
 
 @add_docstring(
@@ -473,15 +473,15 @@ def accuracy(
     """
     Returns
     -------
-    macro_acc: float,
-        the macro accuracy
-    acc: np.ndarray,
-        accuracies for each class, of shape: (n_classes,)
+    macro_acc : float
+        The macro accuracy.
+    acc : np.ndarray
+        Accuracies for each class, of shape: ``(n_classes,)``.
 
     """
     m = metrics_from_confusion_matrix(labels, outputs, num_classes, weights)
 
-    return m["macro_acc"], m["acc"]
+    return m["macro_acc"], m["acc"]  # type: ignore
 
 
 def cls_to_bin(
@@ -493,8 +493,8 @@ def cls_to_bin(
     if labels.ndim == outputs.ndim == 1:
         assert num_classes is not None
         shape = (labels.shape[0], num_classes)
-        labels = _cls_to_bin(labels, shape)
-        outputs = _cls_to_bin(outputs, shape)
+        labels = _cls_to_bin(labels, shape)  # type: ignore
+        outputs = _cls_to_bin(outputs, shape)  # type: ignore
     elif labels.ndim == 1:
         shape = outputs.shape
         labels = _cls_to_bin(labels, shape)
@@ -513,7 +513,26 @@ def _cls_to_bin(cls: np.ndarray, shape: Tuple[int]) -> np.ndarray:
 
 
 class ClassificationMetrics:
-    """ """
+    """
+    Classification metrics for multi-label and multi-class classification.
+
+    Parameters
+    ----------
+    multi_label: bool,
+        whether is multi-label classification
+    macro: bool,
+        whether to use macro-averaged metrics
+    extra_metrics: Callable,
+        extra metrics to compute,
+        has to be a function with signature:
+        `def extra_metrics(
+            labels: np.ndarray,
+            outputs: np.ndarray,
+            num_classes: Optional[int]=None,
+            weights: Optional[np.ndarray]=None
+        ) -> dict`
+
+    """
 
     __name__ = "ClassificationMetrics"
 
@@ -523,25 +542,6 @@ class ClassificationMetrics:
         macro: bool = True,
         extra_metrics: Optional[Callable] = None,
     ) -> None:
-        """
-
-        Parameters
-        ----------
-        multi_label: bool,
-            whether is multi-label classification
-        macro: bool,
-            whether to use macro-averaged metrics
-        extra_metrics: Callable,
-            extra metrics to compute,
-            has to be a function with signature:
-            `def extra_metrics(
-                labels: np.ndarray,
-                outputs: np.ndarray,
-                num_classes: Optional[int]=None,
-                weights: Optional[np.ndarray]=None
-            ) -> dict`
-
-        """
         self.multi_label = multi_label
         self.set_macro(macro)
         self._extra_metrics = extra_metrics
@@ -579,10 +579,12 @@ class ClassificationMetrics:
 
     def set_macro(self, macro: bool) -> None:
         """
+        Set whether to use macro-averaged metrics.
+
         Parameters
         ----------
-        macro: bool,
-            whether to use macro-averaged metrics
+        macro : bool
+            Whether to use macro-averaged metrics.
 
         """
         self.__prefix = ""
@@ -597,7 +599,31 @@ class ClassificationMetrics:
         num_classes: Optional[int] = None,
         weights: Optional[np.ndarray] = None,
     ) -> "ClassificationMetrics":
-        """ """
+        """
+        Compute classification metrics.
+
+        Parameters
+        ----------
+        labels : np.ndarray
+            Binary labels, of shape: ``(n_samples, n_classes)``
+            or indices of each label class, of shape: ``(n_samples,)``
+        outputs : np.ndarray
+            Binary outputs, of shape: ``(n_samples, n_classes)``
+            or indices of each class predicted, of shape: ``(n_samples,)``
+        num_classes : int, optional
+            Number of classes,
+            If `labels` and `outputs` are both of shape ``(n_samples,)``,
+            then `num_classes` must be specified.
+        weights : np.ndarray, optional
+            Weights for each class, of shape: ``(n_classes,)``,
+            used to compute macro metrics.
+
+        Returns
+        -------
+        self : ClassificationMetrics
+            The ClassificationMetrics object itself.
+
+        """
         self._cm = confusion_matrix(labels, outputs, num_classes)
         self._cm_ovr = ovr_confusion_matrix(labels, outputs, num_classes)
         self._metrics = metrics_from_confusion_matrix(labels, outputs, num_classes, weights)
@@ -607,7 +633,7 @@ class ClassificationMetrics:
 
         return self
 
-    compute.__doc__ = metrics_from_confusion_matrix.__doc__.replace("metrics: dict,", f"{__name__},").replace(
+    compute.__doc__ = metrics_from_confusion_matrix.__doc__.replace("metrics: dict,", f"{__name__},").replace(  # type: ignore
         "metrics = metrics_from_confusion_matrix(labels, outputs)",
         """metrics = ClassificationMetrics()
     >>> metrics = metrics.compute(labels, outputs)
@@ -777,7 +803,17 @@ class ClassificationMetrics:
 
 
 class SeizureClassificationMetrics(ClassificationMetrics):
-    """Binary classification metrics for seizure detection."""
+    """Binary classification metrics for seizure detection.
+
+    Parameters
+    ----------
+    positive_class : int
+        The positive class index, default is 1.
+    subset : Optional[Sequence[str]]
+        The subset of metrics to return. Default is
+        ["sens", "spec", "prec", "acc", "npv", "auc", "f1"].
+
+    """
 
     __name__ = "SeizureClassificationMetrics"
 
@@ -794,13 +830,29 @@ class SeizureClassificationMetrics(ClassificationMetrics):
             "f1",
         ],
     ) -> None:
-        """ """
         self.positive_class = positive_class
         self.subset = subset
         super().__init__(multi_label=False, macro=False)
 
-    def __call__(self, y_true: np.ndarray, y_prob: np.ndarray, thr: float) -> Dict[str, float]:
-        """ """
+    def __call__(self, y_true: np.ndarray, y_prob: np.ndarray, thr: float) -> Dict[str, float]:  # type: ignore
+        """
+        Compute seizure classification metrics.
+
+        Parameters
+        ----------
+        y_true : np.ndarray
+            True labels, of shape: ``(n_samples,)``.
+        y_prob : np.ndarray
+            Predicted probabilities, of shape: ``(n_samples,)`` or ``(n_samples, 2)``.
+        thr : float
+            Threshold to convert probabilities to binary predictions.
+
+        Returns
+        -------
+        metrics : Dict[str, float]
+            Dictionary of computed metrics.
+
+        """
         assert y_true.ndim == 1, "y_true must be 1D"
         if y_prob.ndim == 1:
             assert y_prob.shape[0] == y_true.shape[0], "labels and probabilities must have the same length"
@@ -820,7 +872,7 @@ class SeizureClassificationMetrics(ClassificationMetrics):
 
         super().__call__(y_true, y_pred, num_classes=2)
 
-        metrics = {k: v[self.positive_class] for k, v in self._metrics.items() if not k.startswith("macro_")}
+        metrics = {k: v[self.positive_class] for k, v in self._metrics.items() if not k.startswith("macro_")}  # type: ignore
         # use the AUC score computed from roc_auc_score from sklearn
         metrics.pop("auroc")
         metrics.pop("auprc")
@@ -830,5 +882,10 @@ class SeizureClassificationMetrics(ClassificationMetrics):
             metrics = {k: v for k, v in metrics.items() if k in self.subset}
             if set(self.subset) - set(metrics.keys()):
                 warnings.warn(f"Metrics {set(self.subset) - set(metrics.keys())} not available")
+
+        # convert all numpy floats to python floats
+        for k, v in metrics.items():
+            if isinstance(v, np.generic):
+                metrics[k] = v.item()
 
         return metrics

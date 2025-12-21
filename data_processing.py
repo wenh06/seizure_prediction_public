@@ -1,8 +1,7 @@
 # !/usr/bin/env python
 # coding=UTF-8
 
-"""
-"""
+""" """
 
 import json
 import pickle
@@ -43,43 +42,59 @@ __all__ = [
 _DATA_FP = DEFAULTS.DATA_DIR / "胶质瘤20220609.xlsx"
 
 
-def load_raw_data(data_fp: Optional[Union[str, Path]] = None) -> pd.DataFrame:
+def load_raw_data(data_fp: Optional[Union[str, Path]] = None, strict_glioma: bool = True) -> pd.DataFrame:
     """
     Loads the raw data.
 
     Parameters
     ----------
-    data_fp: str or Path, optional,
+    data_fp : str or Path, optional
         The file path of the raw data.
         If not provided, the default file path will be used.
+    strict_glioma : bool, default True
+        Whether to strictly filter glioma types.
+        If True, exclude data samples with non-glioma types,
+        e.g., those in `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
 
     Returns
     -------
-    df_data: pd.DataFrame,
+    df_data : pd.DataFrame
         The raw data.
 
     """
     df_data = pd.read_excel(data_fp or _DATA_FP, engine="openpyxl")
     df_data.set_index("患者编号", inplace=True)
+    if strict_glioma:
+        exclude_types = DataPreprocessConfig.exclude_types_zh
+        df_data = df_data[~df_data["病理分型粗"].isin(exclude_types)]
     return df_data
 
 
-def preprocess_data(config: Optional[CFG] = None, data: Optional[Union[str, Path, pd.DataFrame]] = None) -> pd.DataFrame:
+def preprocess_data(
+    config: Optional[CFG] = None, data: Optional[Union[str, Path, pd.DataFrame]] = None, strict_glioma: bool = True
+) -> pd.DataFrame:
     """
     Perform data preprocessing on the raw data with the given configuration.
 
     Parameters
     ----------
-    config: CFG, optional,
+    config : CFG, optional
         The configuration of the data preprocessing.
         If not provided, the default configuration will be used.
-    data: str or Path or DataFrame, optional,
+    data : str or Path or DataFrame, optional
         The file path of the raw data, or the DataFrame of the raw data.
         If not provided, the default file path will be used.
+    strict_glioma : bool, default True
+        Whether to strictly filter glioma types.
+        If True, exclude data samples with non-glioma types,
+        e.g., those in `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
+        This parameter is ignored if `data` is provided as a DataFrame.
 
     Returns
     -------
-    df_refined: pd.DataFrame,
+    df_refined : pd.DataFrame
         The preprocessed data.
 
     """
@@ -91,7 +106,10 @@ def preprocess_data(config: Optional[CFG] = None, data: Optional[Union[str, Path
         config.update(_config)
 
     if data is None or isinstance(data, (str, Path)):
-        df_data = load_raw_data(data)
+        df_data = load_raw_data(data, strict_glioma=False)
+        if strict_glioma:
+            exclude_types = config.exclude_types_zh
+            df_data = df_data[~df_data["病理分型粗"].isin(exclude_types)]
     elif isinstance(data, pd.DataFrame):
         df_data = data
     else:
@@ -169,6 +187,7 @@ def get_features(
     feature_list: Optional[List[str]] = None,
     data: Optional[Union[str, Path, pd.DataFrame]] = None,
     ensure_y: bool = False,
+    strict_glioma: bool = True,
     **kwargs: Any,
 ) -> Tuple[pd.DataFrame, List[str]]:
     """
@@ -176,27 +195,39 @@ def get_features(
 
     Parameters
     ----------
-    preprocess_config: CFG, optional,
+    preprocess_config : CFG, optional
         The configuration of the data preprocessing.
         If not provided, the default configuration will be used.
-    feature_config: CFG, optional,
+    feature_config : CFG, optional
         The configuration of the feature engineering.
         If not provided, the default configuration will be used.
-    feature_set: str, optional,
+    feature_set : str, optional
         The feature set to be used.
         If provided, overrides ``feature_config.set_name``.
         If not provided, `feature_config.set_name` should be provided.
-    feature_list: list of str, optional,
+    feature_list : list of str, optional
         The feature list to be used.
         If provided, `feature_list` should be a subset
         of the features produced by the given `feature_set`.
         If not provided, the default feature list that
         corresponds to `feature_set` will be used.
-    data: str or Path or DataFrame, optional,
+    data : str or Path or DataFrame, optional
         The file path of the raw data, or the DataFrame of the raw data.
         If not provided, the default file path will be used.
-    ensure_y: bool, default False,
+    ensure_y : bool, default False
         Whether to ensure that the returned DataFrame contains the target variable.
+    strict_glioma : bool, default True
+        Whether to strictly filter glioma types.
+        If True, exclude data samples with non-glioma types,
+        e.g., those in `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
+        This parameter is ignored if `data` is provided as a DataFrame.
+    **kwargs : dict
+        Additional keyword arguments:
+        - inference: bool, default False,
+          Whether in inference mode.
+        - allow_missing: bool, default False,
+          Whether to allow missing values in the returned DataFrame.
 
     Returns
     -------
@@ -212,7 +243,7 @@ def get_features(
         _preprocess_config = deepcopy(preprocess_config)
         preprocess_config = deepcopy(DataPreprocessConfig)
         preprocess_config.update(_preprocess_config)
-    df_refined = preprocess_data(preprocess_config, data)
+    df_refined = preprocess_data(preprocess_config, data, strict_glioma=strict_glioma)
 
     if feature_config is None:
         feature_config = deepcopy(FeatureConfig)
@@ -296,7 +327,7 @@ def get_features(
         err = "; ".join([f"the {row_idx}-th piece of data has nan values in columns `{cols}`" for row_idx, cols in err.items()])
         raise ValueError(f"nan cells detected in the refined data: {err}")
 
-    return df_refined, feature_list
+    return df_refined, feature_list  # type: ignore
 
 
 def get_training_data(
@@ -306,6 +337,7 @@ def get_training_data(
     feature_list: Optional[List[str]] = None,
     data: Optional[Union[str, Path, pd.DataFrame]] = None,
     return_dtype: str = "np",
+    strict_glioma: bool = True,
     **kwargs: Any,
 ) -> Union[
     Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[str]],
@@ -316,33 +348,43 @@ def get_training_data(
 
     Parameters
     ----------
-    preprocess_config: CFG, optional,
+    preprocess_config : CFG, optional
         The configuration of the data preprocessing.
         If not provided, the default configuration will be used.
-    feature_config: CFG, optional,
+    feature_config : CFG, optional
         The configuration of the feature engineering.
         If not provided, the default configuration will be used.
-    feature_set: str, default "TDS",
+    feature_set : str, default "TDS"
         The feature set to be used.
-    feature_list: list of str, optional,
+    feature_list : list of str, optional
         The feature list to be used.
         If provided, `feature_list` should be a subset
         of the features produced by the given `feature_set`.
         If not provided, the default feature list that
         corresponds to `feature_set` will be used.
-    data: str or Path or DataFrame, optional,
+    data : str or Path or DataFrame, optional
         The file path of the raw data, or the DataFrame of the raw data.
         If not provided, the default file path will be used.
-    return_dtype: str, default "np",
+    return_dtype : str, default "np"
         The data type of the returned data, can be either "np" or "pd".
+    strict_glioma : bool, default True
+        Whether to strictly filter glioma types.
+        If True, exclude data samples with non-glioma types,
+        e.g., those in `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
+        This parameter is ignored if `data` is provided as a DataFrame.
+    **kwargs : dict
+        Additional keyword arguments that will be passed to `get_features` function:
+        - inference: bool, default False,
+          Whether in inference mode.
+        - allow_missing: bool, default False,
+          Whether to allow missing values in the returned DataFrame.
 
     Returns
     -------
     (tuple of `np.ndarray` or tuple of `pd.DataFrame`), list of str,
-    if `return_dtype` is "np":
-        X_train, X_test, y_train, y_test, feature_list
-    if `return_dtype` is "pd":
-        df_train, df_test, feature_list
+    if `return_dtype` is "np": X_train, X_test, y_train, y_test, feature_list
+    if `return_dtype` is "pd": df_train, df_test, feature_list
 
     """
     if preprocess_config is None:
@@ -367,6 +409,7 @@ def get_training_data(
         feature_list,
         data,
         ensure_y=True,
+        strict_glioma=strict_glioma,
         **kwargs,
     )
     feature_list = feature_cols
@@ -412,10 +455,10 @@ def get_training_data(
             else:
                 over_sampler_kw = {}
             over_sampler = _get_over_sampler(over_sampler, **over_sampler_kw)
-            X_train, y_train = over_sampler.fit_resample(X_train, y_train)
+            X_train, y_train = over_sampler.fit_resample(X_train, y_train)  # type: ignore
             # no over-sampling for test set
             # X_test, y_test = over_sampler.fit_resample(X_test, y_test)
-        return X_train, y_train, X_test, y_test, feature_list
+        return X_train, y_train, X_test, y_test, feature_list  # type: ignore
     elif return_dtype.lower() == "pd":
         if feature_config.get("over_sampler", None) is not None:
             warnings.warn("Over sampling is not supported when return_dtype is `pd.DataFrame`")
@@ -435,36 +478,43 @@ def get_seizure_risk(
     y_col: Optional[str] = None,
     positive_class: Optional[Union[str, int]] = None,
     negative_class: Optional[Union[str, int]] = None,
+    strict_glioma: bool = True,
 ) -> Dict[Union[str, int], Dict[str, Union[float, Tuple[float, float]]]]:
     """
     Compute the seizure risk of a variable.
 
     Parameters
     ----------
-    col: str
+    col : str
         The column name of the variable.
-    classes: str or int or sequence of str or int, optional,
+    classes : str or int or sequence of str or int, optional
         The classes of the variable. If None, all classes of the variable will be used.
-    ci: float, default 0.95,
+    ci : float, default 0.95
         The confidence level of the confidence interval.
-    ci_type: str, default "wilson",
+    ci_type : str, default "wilson"
         The method to compute the confidence interval.
-    df_data: pd.DataFrame, optional,
+    df_data : pd.DataFrame, optional
         The data frame containing the variable and the target variable.
         If provided, `data_fp` will be ignored.
-    data_fp: str or Path, optional,
+    data_fp : str or Path, optional
         The file path of the data file.
         If not provided, the default data file will be used.
         Ignored if `df_data` is provided.
-    y_col: str, optional,
+    y_col : str, optional
         The column name of the target variable.
         If not provided, the default column name will be used.
-    positive_class: str or int, optional,
+    positive_class : str or int, optional
         The positive class of the target variable.
         If not provided, the default positive class will be used.
-    negative_class: str or int, optional,
+    negative_class : str or int, optional
         The negative class of the target variable.
         If not provided, the default negative class will be used.
+    strict_glioma : bool, default True
+        Whether to apply strict glioma filtering.
+        If True, exclude data samples with non-glioma types,
+        e.g., those in `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
+        This parameter is ignored if `df_data` is NOT provided.
 
     Returns
     -------
@@ -478,8 +528,8 @@ def get_seizure_risk(
     if negative_class is None:
         negative_class = DataPreprocessConfig.negative_class
     if df_data is None:
-        df_data = load_raw_data(data_fp)[[y_col, col]]
-    df_risk = df_data.groupby(col)[y_col].value_counts().unstack()
+        df_data = load_raw_data(data_fp, strict_glioma=strict_glioma)[[y_col, col]]
+    df_risk = df_data.groupby(col)[y_col].value_counts().unstack()  # type: ignore
     if df_risk.columns.tolist() == [negative_class, positive_class]:
         df_risk = df_risk[df_risk.columns[::-1]]
     ret_val = {}
@@ -487,7 +537,7 @@ def get_seizure_risk(
         classes = df_risk.index.tolist()
     if isinstance(classes, (str, int)):
         classes = [classes]
-    for c in classes:
+    for c in classes:  # type: ignore
         df_risk.loc["其他"] = df_risk.loc[df_risk.index != c].sum(axis=0)
         mat = df_risk.loc[[c, "其他"]].values
         n_positive, n_negative = mat[0, :]
@@ -512,36 +562,44 @@ def get_seizure_risk_difference(
     y_col: Optional[str] = None,
     positive_class: Optional[Union[str, int]] = None,
     negative_class: Optional[Union[str, int]] = None,
+    strict_glioma: bool = True,
 ) -> Dict[Union[str, int], Dict[str, Union[float, Tuple[float, float]]]]:
     """
     Compute the seizure risk of a variable.
 
     Parameters
     ----------
-    col: str
+    col : str
         The column name of the variable.
-    ref_class: str or int,
+    ref_class : str or int
         The class to be used as the reference class.
-    ci: float, default 0.95,
+    ci : float, default 0.95
         The confidence level of the confidence interval.
-    ci_type: str, default "wilson",
+    ci_type : str, default "wilson"
         The method to compute the confidence interval.
-    df_data: pd.DataFrame, optional,
+    df_data : pd.DataFrame, optional
         The data frame containing the variable and the target variable.
         If provided, `data_fp` will be ignored.
-    data_fp: str or Path, optional,
+    data_fp : str or Path, optional
         The file path of the data file.
         If not provided, the default data file will be used.
         Ignored if `df_data` is provided.
-    y_col: str, optional,
+    y_col : str, optional
         The column name of the target variable.
         If not provided, the default column name will be used.
-    positive_class: str or int, optional,
+    positive_class : str or int, optional
         The positive class of the target variable.
         If not provided, the default positive class will be used.
-    negative_class: str or int, optional,
+    negative_class : str or int, optional
         The negative class of the target variable.
         If not provided, the default negative class will be used.
+    strict_glioma : bool, default True
+        Whether to apply strict glioma filtering.
+        If True, exclude data samples with non-glioma types,
+        e.g., those in `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
+        This parameter is ignored if `df_data` is NOT provided.
+
 
     Returns
     -------
@@ -555,8 +613,8 @@ def get_seizure_risk_difference(
     if negative_class is None:
         negative_class = DataPreprocessConfig.negative_class
     if df_data is None:
-        df_data = load_raw_data(data_fp)[[y_col, col]]
-    df_risk = df_data.groupby(col)[y_col].value_counts().unstack()
+        df_data = load_raw_data(data_fp, strict_glioma=strict_glioma)[[y_col, col]]
+    df_risk = df_data.groupby(col)[y_col].value_counts().unstack()  # type: ignore
     if df_risk.columns.tolist() == [negative_class, positive_class]:
         df_risk = df_risk[df_risk.columns[::-1]]
     ret_val = {
@@ -588,7 +646,7 @@ def get_seizure_risk_difference(
             ci,
             ci_type,
         ).astuple()
-        risk_difference = (
+        risk_difference = (  # type: ignore
             get_seizure_risk(
                 col,
                 c,
@@ -606,11 +664,25 @@ def get_seizure_risk_difference(
             "confidence_interval": confidence_interval,
         }
 
-    return ret_val
+    return ret_val  # type: ignore
 
 
 def _get_over_sampler(name: str, **kwargs) -> BaseOverSampler:
-    """ """
+    """Get the over-sampler by name.
+
+    Parameters
+    ----------
+    name : str
+        The name of the over-sampler.
+    **kwargs : dict
+        The keyword arguments for the over-sampler.
+
+    Returns
+    -------
+    over_sampler : BaseOverSampler
+        The over-sampler instance.
+
+    """
     if name.lower() == "smotenc":
         assert "categorical_features" in kwargs
         return SMOTENC(**kwargs)

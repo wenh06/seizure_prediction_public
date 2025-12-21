@@ -112,3 +112,6 @@ if __name__ == "__main__":
     # nohup python service.py --ip xx.xx.xx.xx [--port xxxx] > ./log/service.log 2>&1 & echo $! > ./log/service.pid
     args = parse_args()
     seizure_app.run(host=args["ip"], port=args["port"], debug=True)
+
+    # or run in a container:
+    # docker run -d -p [port1]:[port2] seizure-prediction-service:latest bash -c "python service.py --ip 0.0.0.0 --port [port2]"

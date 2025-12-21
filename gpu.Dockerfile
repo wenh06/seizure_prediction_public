@@ -1,8 +1,28 @@
-# FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime
-# FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+# https://hub.docker.com/r/pytorch/pytorch
 FROM pytorch/pytorch:2.2.0-cuda11.8-cudnn8-runtime
+# NOTE:
+# pytorch/pytorch:1.13.1-cuda11.6-cudnn8-runtime has python version 3.10.8, system version Ubuntu 18.04.6 LTS
+# pytorch/pytorch:1.10.1-cuda11.3-cudnn8-runtime has python version 3.7.x
+# pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime has python version 3.10.11, system version Ubuntu 20.04.6 LTS
+# pytorch/pytorch:2.1.2-cuda11.8-cudnn8-runtime has python version 3.10.13, system version Ubuntu 20.04.6 LTS
+# pytorch/pytorch:2.2.0-cuda11.8-cudnn8-runtime has python version 3.10.13, system version Ubuntu 22.04.3 LTS
 
+
+# set the environment variable to avoid interactive installation
+# which might stuck the docker build process
 ENV DEBIAN_FRONTEND=noninteractive
+
+# check distribution of the base image
+RUN cat /etc/issue
+
+# check detailed system version of the base image
+RUN cat /etc/os-release
+
+# check python version of the base image
+RUN python --version
+
+# check CUDA version of the base image if is installed
+RUN if [ -x "$(command -v nvcc)" ]; then nvcc --version; fi
 
 ARG serving=true
 

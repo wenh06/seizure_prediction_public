@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 import json
 import pickle
@@ -75,6 +74,7 @@ def get_model(model_name: str, params: Optional[dict] = None) -> BaseEstimator:
 
     """
     model_cls = _MODEL_MAP[model_name]
+    params = params or {}
     if model_cls in [GradientBoostingClassifier, SVC, MLPClassifier]:
         params.pop("n_jobs", None)
     return model_cls(**(params or {}))
@@ -153,7 +153,7 @@ class SeizurePredictionModel(ReprMixin):
 
     def __init__(
         self,
-        base_model: Union[BaseEstimator, SeizureMLP],
+        base_model: Union[BaseEstimator, SeizureMLP],  # type: ignore
         thr: float = 0.5,
         preprocess_config: Optional[CFG] = None,
         feature_config: Optional[CFG] = None,
@@ -215,6 +215,6 @@ class SeizurePredictionModel(ReprMixin):
         pred = (proba > self.thr).astype(int)
         # re-scale the probability
         # lagrangian polyn of (0,0), (1,1), (thr, 0.5)
-        proba = proba * (self.thr * (proba - self.thr) + 0.5 * (1 - proba)) / self.thr / (1 - self.thr)
+        proba = proba * (self.thr * (proba - self.thr) + 0.5 * (1 - proba)) / self.thr / (1 - self.thr)  # type: ignore
         ret = [{"prediction": int(p), "probability": float(q)} for p, q in zip(pred, proba)]
         return ret

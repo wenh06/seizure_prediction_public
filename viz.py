@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
@@ -36,7 +35,7 @@ __all__ = [
 ]
 
 
-# sns.set()
+# sns.set_theme()
 # plt.rcParams["xtick.labelsize"] = 18
 # plt.rcParams["ytick.labelsize"] = 18
 # plt.rcParams["axes.labelsize"] = 24
@@ -47,6 +46,7 @@ __all__ = [
 
 font_dirs = [str(DEFAULTS.FONT_DIR)]
 font_files = font_manager.findSystemFonts(fontpaths=font_dirs)
+font_file = None
 for font_file in font_files:
     font_manager.fontManager.addfont(font_file)
 _font_names = [item.name for item in font_manager.fontManager.ttflist]
@@ -81,37 +81,43 @@ _df_colors = pd.read_csv(DEFAULTS.DATA_DIR / "named-colors.csv")
 
 
 def _get_color(name: str) -> str:
-    """
-    Get the html (hex) color of the name.
+    """Get the html (hex) color of the name.
 
     Parameters
     ----------
-    name: str,
+    name : str
         The name of the color.
 
     Returns
     -------
-    color: str,
+    color : str
         The html color of the name.
 
     """
     return _df_colors.loc[_df_colors.name == name, "hex"].values[0]
 
 
-def plot_age_distribution() -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot the age distribution of the subjects.
+def plot_age_distribution(strict_glioma: bool = True) -> Tuple[plt.Figure, plt.Axes]:  # type: ignore
+    """Plot the age distribution of the subjects.
+
+    Parameters
+    ----------
+    strict_glioma : bool, default True
+        Whether to apply strict glioma filtering when loading the raw data.
+        If True, exclude subjects with pathological types in
+        `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
 
     Returns
     -------
-    fig: matplotlib.figure.Figure,
+    fig : matplotlib.figure.Figure
         The figure object.
-    ax: matplotlib.axes.Axes,
+    ax : matplotlib.axes.Axes
         The axes object.
 
     """
     mpl.rcParams.update(mpl.rcParamsDefault)
-    sns.set()
+    sns.set_theme()
     plt.rcParams["xtick.labelsize"] = 20
     plt.rcParams["ytick.labelsize"] = 20
     plt.rcParams["axes.labelsize"] = 26
@@ -120,14 +126,15 @@ def plot_age_distribution() -> Tuple[plt.Figure, plt.Axes]:
     if "Times New Roman" in _font_names:
         # times.ttf
         if mpl.get_backend() == "pgf":
-            # setting "Times New Roman" would cause LatexError
-            plt.rcParams["font.family"] = "times"
+            # setting "Times New Roman" would cause LatexError (NOT correct now)
+            # plt.rcParams["font.family"] = "times"
+            plt.rcParams["font.family"] = "Times New Roman"
         else:
             plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
-    df = load_raw_data()
+    df = load_raw_data(strict_glioma=strict_glioma)
     fig, ax = plt.subplots(figsize=(16, 8))
     ax.hist(
         [df[df.整体有癫痫 == "否"].年龄, df[df.整体有癫痫 == "是"].年龄],
@@ -157,20 +164,27 @@ def plot_age_distribution() -> Tuple[plt.Figure, plt.Axes]:
     return fig, ax
 
 
-def plot_sex_distribution() -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot the sex distribution of the subjects.
+def plot_sex_distribution(strict_glioma: bool = True) -> Tuple[plt.Figure, plt.Axes]:  # type: ignore
+    """Plot the sex distribution of the subjects.
+
+    Parameters
+    ----------
+    strict_glioma : bool, default True
+        Whether to apply strict glioma filtering when loading the raw data.
+        If True, exclude subjects with pathological types in
+        `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
 
     Returns
     -------
-    fig: matplotlib.figure.Figure,
+    fig : matplotlib.figure.Figure
         The figure object.
-    ax: matplotlib.axes.Axes,
+    ax : matplotlib.axes.Axes
         The axes object.
 
     """
     mpl.rcParams.update(mpl.rcParamsDefault)
-    sns.set()
+    sns.set_theme()
     plt.rcParams["xtick.labelsize"] = 20
     plt.rcParams["ytick.labelsize"] = 20
     plt.rcParams["axes.labelsize"] = 26
@@ -179,14 +193,15 @@ def plot_sex_distribution() -> Tuple[plt.Figure, plt.Axes]:
     if "Times New Roman" in _font_names:
         # times.ttf
         if mpl.get_backend() == "pgf":
-            # setting "Times New Roman" would cause LatexError
-            plt.rcParams["font.family"] = "times"
+            # setting "Times New Roman" would cause LatexError (NOT correct now)
+            # plt.rcParams["font.family"] = "times"
+            plt.rcParams["font.family"] = "Times New Roman"
         else:
             plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
-    df = load_raw_data()
+    df = load_raw_data(strict_glioma=strict_glioma)
     fig, ax = plt.subplots(figsize=(8, 8))
     coords = ["Male", "Female"]
     df_tmp = df[df.整体有癫痫 == "否"]
@@ -212,29 +227,28 @@ def plot_feature_importance(
     clf: BaseEstimator,
     sort: bool = True,
     zh2en: bool = True,
-) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot the feature importance of the given classifier.
+) -> Tuple[plt.Figure, plt.Axes]:  # type: ignore
+    """Plot the feature importance of the given classifier.
 
     Parameters
     ----------
-    clf: sklearn.base.BaseEstimator,
+    clf : sklearn.base.BaseEstimator
         The classifier.
-    sort: bool, default True,
+    sort : bool, default True
         Whether to sort the features by their importance.
-    zh2en: bool, default True,
+    zh2en : bool, default True
         If True, convert the feature names from Chinese to English.
 
     Returns
     -------
-    fig: matplotlib.figure.Figure,
+    fig : matplotlib.figure.Figure
         The figure object.
-    ax: matplotlib.axes.Axes,
+    ax : matplotlib.axes.Axes
         The axes object.
 
     """
     mpl.rcParams.update(mpl.rcParamsDefault)
-    sns.set()
+    sns.set_theme()
     plt.rcParams["xtick.labelsize"] = 20
     plt.rcParams["ytick.labelsize"] = 20
     plt.rcParams["axes.labelsize"] = 26
@@ -243,8 +257,9 @@ def plot_feature_importance(
     if "Times New Roman" in _font_names and zh2en:
         # times.ttf
         if mpl.get_backend() == "pgf":
-            # setting "Times New Roman" would cause LatexError
-            plt.rcParams["font.family"] = "times"
+            # setting "Times New Roman" would cause LatexError (NOT correct now)
+            # plt.rcParams["font.family"] = "times"
+            plt.rcParams["font.family"] = "Times New Roman"
         else:
             plt.rcParams["font.family"] = "Times New Roman"
     else:
@@ -272,35 +287,34 @@ def plot_feature_permutation_importance(
     sort: bool = True,
     merge_split_variables: bool = True,
     zh2en: bool = True,
-) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot the feature permutation importance of the given classifier.
+) -> Tuple[plt.Figure, plt.Axes]:  # type: ignore
+    """Plot the feature permutation importance of the given classifier.
 
     Parameters
     ----------
-    clf: sklearn.base.BaseEstimator,
+    clf : sklearn.base.BaseEstimator
         The classifier.
-    X_test: numpy.ndarray,
+    X_test : numpy.ndarray
         The test data.
-    y_test: numpy.ndarray,
+    y_test : numpy.ndarray
         The test labels.
-    sort: bool, default True,
+    sort : bool, default True
         Whether to sort the features by their importance.
-    zh2en: bool, default True,
+    zh2en : bool, default True
         If True, convert the feature names from Chinese to English.
-    merge_split_variables: bool, default True,
+    merge_split_variables : bool, default True
         If True, merge the split variables into one variable.
 
     Returns
     -------
-    fig: matplotlib.figure.Figure,
+    fig : matplotlib.figure.Figure
         The figure object.
-    ax: matplotlib.axes.Axes,
+    ax : matplotlib.axes.Axes
         The axes object.
 
     """
     mpl.rcParams.update(mpl.rcParamsDefault)
-    sns.set()
+    sns.set_theme()
     plt.rcParams["xtick.labelsize"] = 20
     plt.rcParams["ytick.labelsize"] = 20
     plt.rcParams["axes.labelsize"] = 26
@@ -309,8 +323,9 @@ def plot_feature_permutation_importance(
     if "Times New Roman" in _font_names and zh2en:
         # times.ttf
         if mpl.get_backend() == "pgf":
-            # setting "Times New Roman" would cause LatexError
-            plt.rcParams["font.family"] = "times"
+            # setting "Times New Roman" would cause LatexError (NOT correct now)
+            # plt.rcParams["font.family"] = "times"
+            plt.rcParams["font.family"] = "Times New Roman"
         else:
             plt.rcParams["font.family"] = "Times New Roman"
     else:
@@ -372,36 +387,35 @@ def plot_roc_curve(
     estimator_names: Optional[Union[str, Sequence[str]]] = None,
     sort: bool = True,
     **kwargs,
-) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot the ROC curve of the given estimators.
+) -> Tuple[plt.Figure, plt.Axes]:  # type: ignore
+    """Plot the ROC curve of the given estimators.
 
     Parameters
     ----------
-    estimators: sklearn.base.BaseEstimator or list of sklearn.base.BaseEstimator,
+    estimators : sklearn.base.BaseEstimator or list of sklearn.base.BaseEstimator
         The estimator(s).
-    X: numpy.ndarray or list of numpy.ndarray,
+    X : numpy.ndarray or list of numpy.ndarray
         The data.
-    y: numpy.ndarray or list of numpy.ndarray,
+    y : numpy.ndarray or list of numpy.ndarray
         The labels.
-    estimator_names: str or list of str, default None,
+    estimator_names : str or list of str, default None
         The name(s) of the estimator(s).
         If None, the name (`.__class__.__name__`) of the estimator will be used.
-    sort: bool, default True,
+    sort : bool, default True
         Whether to sort the estimators by their AUC in descending order.
-    **kwargs: dict,
+    **kwargs : dict
         Additional keyword arguments for `ax.plot`.
 
     Returns
     -------
-    fig: matplotlib.figure.Figure,
+    fig : matplotlib.figure.Figure
         The figure object.
-    ax: matplotlib.axes.Axes,
+    ax : matplotlib.axes.Axes
         The axes object.
 
     """
     mpl.rcParams.update(mpl.rcParamsDefault)
-    sns.set()
+    sns.set_theme()
     plt.rcParams["xtick.labelsize"] = 20
     plt.rcParams["ytick.labelsize"] = 20
     plt.rcParams["axes.labelsize"] = 26
@@ -410,8 +424,9 @@ def plot_roc_curve(
     if "Times New Roman" in _font_names:
         # times.ttf
         if mpl.get_backend() == "pgf":
-            # setting "Times New Roman" would cause LatexError
-            plt.rcParams["font.family"] = "times"
+            # setting "Times New Roman" would cause LatexError (NOT correct now)
+            # plt.rcParams["font.family"] = "times"
+            plt.rcParams["font.family"] = "Times New Roman"
         else:
             plt.rcParams["font.family"] = "Times New Roman"
     else:
@@ -460,31 +475,30 @@ def plot_grid_search_agg_boxplot(
     feature_sets: Union[Sequence[str], str],
     bio_na: str = "keep",
     sub_dirs: Optional[Union[str, Sequence[str]]] = None,
-) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot the aggregated boxplot of the grid search results.
+) -> Tuple[plt.Figure, plt.Axes]:  # type: ignore
+    """Plot the aggregated boxplot of the grid search results.
 
     Parameters
     ----------
-    feature_sets: list of str or str,
+    feature_sets : list of str or str
         feature_sets, one of the following:
         "TD", "TDS", "TDB", "TDSB"
-    bio_na: str, default="keep",
+    bio_na : str, default="keep"
         how to handle missing values in the bio feature,
         valid only when feature_sets is a sequence
-    sub_dirs: str or sequence of str, optional,
+    sub_dirs : str or sequence of str, optional
         The sub directories to store the results.
 
     Returns
     -------
-    fig: matplotlib.figure.Figure,
+    fig : matplotlib.figure.Figure
         The figure object.
-    ax: matplotlib.axes.Axes,
+    ax : matplotlib.axes.Axes
         The axes object.
 
     """
     mpl.rcParams.update(mpl.rcParamsDefault)
-    sns.set()
+    sns.set_theme()
     plt.rcParams["xtick.labelsize"] = 18
     plt.rcParams["ytick.labelsize"] = 18
     plt.rcParams["axes.labelsize"] = 24
@@ -493,8 +507,9 @@ def plot_grid_search_agg_boxplot(
     if "Times New Roman" in _font_names:
         # times.ttf
         if mpl.get_backend() == "pgf":
-            # setting "Times New Roman" would cause LatexError
-            plt.rcParams["font.family"] = "times"
+            # setting "Times New Roman" would cause LatexError (NOT correct now)
+            # plt.rcParams["font.family"] = "times"
+            plt.rcParams["font.family"] = "Times New Roman"
         else:
             plt.rcParams["font.family"] = "Times New Roman"
     else:
@@ -509,7 +524,7 @@ def plot_grid_search_agg_boxplot(
         ax.set_ylabel("AUC")
         ax.set_xlabel("Model")
         for loc in np.arange(0.5, 0.5 + num_models, 1):
-            ax.axvline(loc, linestyle="dashed", linewidth=1, color="lightgray")
+            ax.axvline(loc, linestyle="dashed", linewidth=1, color="lightgray")  # type: ignore
     elif isinstance(feature_sets, str):
         df_data = gs_results[gs_results.feature == feature_sets].reset_index(drop=True)
         fig, ax = plt.subplots(figsize=(16, 8))
@@ -517,7 +532,7 @@ def plot_grid_search_agg_boxplot(
         ax.set_ylabel("AUC")
         ax.set_xlabel("Model")
         for loc in np.arange(0.5, 0.5 + num_models, 1):
-            ax.axvline(loc, linestyle="dashed", linewidth=1, color="lightgray")
+            ax.axvline(loc, linestyle="dashed", linewidth=1, color="lightgray")  # type: ignore
         ax.legend(loc="best", title="BIO-NA")
     else:  # feature_sets is a sequence of feature sets
         df_data = gs_results[
@@ -528,7 +543,7 @@ def plot_grid_search_agg_boxplot(
         ax.set_ylabel("AUC")
         ax.set_xlabel("Model")
         for loc in np.arange(0.5, 0.5 + num_models, 1):
-            ax.axvline(loc, linestyle="dashed", linewidth=1, color="lightgray")
+            ax.axvline(loc, linestyle="dashed", linewidth=1, color="lightgray")  # type: ignore
         ax.legend(loc="lower left", title="Feature Set", ncol=len(feature_sets))
     return fig, ax
 
@@ -538,38 +553,40 @@ def plot_seizure_risk_difference(
     comorbidity_type: int = 0,
     biomarker_type: int = 0,
     zh2en: bool = True,
-) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot the seizure risk difference.
+    x_range: Optional[Union[Tuple[float, float], List[float]]] = None,
+) -> Tuple[plt.Figure, plt.Axes]:  # type: ignore
+    """Plot the seizure risk difference.
 
     Parameters
     ----------
-    seizure_risk_dict: dict, optional,
+    seizure_risk_dict : dict, optional
         The dictionary of seizure risk difference.
         If None, use the default dictionary generated by
         `get_seizure_risk_difference`.
-    comorbidity_type: int, default 0,
+    comorbidity_type : int, default 0
         valid only when seizure_risk_dict is None.
         The manifistation of type of the comorbidity variables.
         0 for comparison of "Yes" and "No" for each comorbidity variable.
         1 for comparisons for the positive part of each comorbidity variable.
-    biomarker_type: int, default 0,
+    biomarker_type : int, default 0
         the manifistation of type of the biomarker variables.
         0 for merging the classes other than "-" into one class.
         1 for keeping the classes other than "-" as they are.
-    zh2en: bool, default True,
+    zh2en : bool, default True
         If True, convert the feature names from Chinese to English.
+    x_range : tuple or list of float, optional
+        The range of the x-axis, (x_lower, x_upper).
 
     Returns
     -------
-    fig: matplotlib.figure.Figure,
+    fig : matplotlib.figure.Figure
         The figure object.
-    ax: matplotlib.axes.Axes,
+    ax : matplotlib.axes.Axes
         The axes object.
 
     """
     if seizure_risk_dict is None:
-        seizure_risk_dict = gen_seizure_risk_diff_TDSB_ext(return_type="dict", comorbidity_type=comorbidity_type, zh2en=zh2en)
+        seizure_risk_dict = gen_seizure_risk_diff_TDSB_ext(return_type="dict", comorbidity_type=comorbidity_type, zh2en=zh2en)  # type: ignore
 
     mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set_style("white")
@@ -583,34 +600,37 @@ def plot_seizure_risk_difference(
         {
             "text.usetex": True,  # use default xelatex
             "pgf.rcfonts": False,  # turn off default matplotlib fonts properties
-            "pgf.preamble": [
-                r"\usepackage{amssymb}",
-                r"\usepackage{fontspec}",
-                # r"\setmainfont{Times New Roman}",# EN fonts Romans
-                r"\usepackage{xeCJK}",  # import xeCJK
-                # r"\setCJKmainfont[Path = fonts/]{JDLangZhengTi.TTF}",# set CJK fonts as SimSun
-                r"\xeCJKsetup{CJKecglue=}",  # turn off one space between CJK and EN fonts
-                r"\usepackage{relsize}",
-            ],
+            "pgf.preamble": "\n".join(
+                [
+                    r"\usepackage{amssymb}",
+                    r"\usepackage{fontspec}",
+                    # r"\setmainfont{Times New Roman}",# EN fonts Romans
+                    r"\usepackage{xeCJK}",  # import xeCJK
+                    # r"\setCJKmainfont[Path = fonts/]{JDLangZhengTi.TTF}",# set CJK fonts as SimSun
+                    r"\xeCJKsetup{CJKecglue=}",  # turn off one space between CJK and EN fonts
+                    r"\usepackage{relsize}",
+                ]
+            ),
         }
     )
     if "Times New Roman" in _font_names:
         # times.ttf
-        # setting "Times New Roman" would cause LatexError
-        plt.rcParams["font.family"] = "times"
+        # setting "Times New Roman" would cause LatexError (NOT correct now)
+        # plt.rcParams["font.family"] = "times"
+        plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
     scatter_values = list_sum(
         [
             [val["seizure_risk_difference"]["risk_difference"] for val in v.values()] + [np.nan, np.nan]
-            for k, v in seizure_risk_dict.items()
+            for k, v in seizure_risk_dict.items()  # type: ignore
         ]
     )
     confints = list_sum(
         [
             [val["seizure_risk_difference"]["confidence_interval"] for val in v.values()] + [(0, 0), (0, 0)]
-            for k, v in seizure_risk_dict.items()
+            for k, v in seizure_risk_dict.items()  # type: ignore
         ]
     )
     group_sep = r"$" + r"\cdots" * 11 + r"$"
@@ -630,11 +650,14 @@ def plot_seizure_risk_difference(
                 + r"}"
                 for key in v.keys()
             ]
-            for k, v in seizure_risk_dict.items()
+            for k, v in seizure_risk_dict.items()  # type: ignore
         ]
     )
-    x_lower = 0.1 * np.floor(10 * np.min([itv[0] for itv in confints]))
-    x_upper = 0.1 * np.ceil(10 * np.max([itv[1] for itv in confints]))
+    if x_range is None:
+        x_lower = 0.1 * np.floor(10 * np.min([itv[0] for itv in confints]))
+        x_upper = 0.1 * np.ceil(10 * np.max([itv[1] for itv in confints]))
+    else:
+        x_lower, x_upper = x_range
 
     fig, ax = plt.subplots(figsize=((x_upper - x_lower + 0.2) * 8, 0.5 * len(scatter_values)))
     # plot the risk as diamonds
@@ -666,7 +689,7 @@ def plot_seizure_risk_difference(
         # plot the vertical dashed lines at the x ticks
         if abs(x) < 1e-3:  # x approx 0
             continue
-        ax.axvline(x, ls=":", color="gray", lw=0.7, dash_capstyle="round")
+        ax.axvline(x, ls=":", color="gray", lw=0.7, dash_capstyle="round")  # type: ignore
     # plot the red dashed vertical line at x=0
     ax.axvline(0, ls=":", color="red", dash_capstyle="round")
     ax.set_yticks(range(2, len(names) + 1))
@@ -696,31 +719,30 @@ def plot_feature_selection_results(
     sel_res: Union[Dict[str, Any], str, Path],
     method: str = "rfe",
     method_map: Optional[Dict[str, str]] = None,
-) -> Tuple[plt.Figure, plt.Axes]:
-    """
-    Plot feature selection results.
+) -> Tuple[plt.Figure, plt.Axes]:  # type: ignore
+    """Plot feature selection results.
 
     Parameters
     ----------
-    sel_res: dict or str or Path,
+    sel_res : dict or str or Path
         The dictionary of feature selection results,
         or the path to the file that stores the feature selection results.
-    method: str, default "rfe",
+    method : str, default "rfe"
         The method used for feature selection to plot.
-    method_map: dict, default None,
+    method_map : dict, default None
         The mapping from the method name to the name to be displayed in the plot.
         If not provided, the default mapping will be used.
 
     Returns
     -------
-    fig: matplotlib.figure.Figure,
+    fig : matplotlib.figure.Figure
         The figure object.
-    ax: matplotlib.axes.Axes,
+    ax : matplotlib.axes.Axes
         The axes object.
 
     """
     mpl.rcParams.update(mpl.rcParamsDefault)
-    sns.set()
+    sns.set_theme()
     plt.rcParams["xtick.labelsize"] = 18
     plt.rcParams["ytick.labelsize"] = 18
     plt.rcParams["axes.labelsize"] = 24
@@ -729,8 +751,9 @@ def plot_feature_selection_results(
     if "Times New Roman" in _font_names:
         # times.ttf
         if mpl.get_backend() == "pgf":
-            # setting "Times New Roman" would cause LatexError
-            plt.rcParams["font.family"] = "times"
+            # setting "Times New Roman" would cause LatexError (NOT correct now)
+            # plt.rcParams["font.family"] = "times"
+            plt.rcParams["font.family"] = "Times New Roman"
         else:
             plt.rcParams["font.family"] = "Times New Roman"
     else:
@@ -753,22 +776,21 @@ def plot_feature_selection_results(
 
 
 def plot_shap_summary(
-    shap_values: List[np.ndarray],
+    shap_values: Union[List[np.ndarray], np.ndarray],
     X_test: np.ndarray,
     feature_list: Optional[List[str]] = None,
     class_idx: Optional[int] = 1,
     zh2en: bool = True,
     max_display: int = 10,
     **kwargs,
-) -> Dict[str, plt.Figure]:
-    """
-    Plot SHAP summary plots.
+) -> Dict[str, plt.Figure]:  # type: ignore
+    """Plot SHAP summary plots.
 
     Parameters
     ----------
-    shap_values: list of np.ndarray (of length 2 for binary classification),
-        List of shap values for the model.
-        can be obtained via, for example,
+    shap_values : list of np.ndarray or np.ndarray
+        List of shap values for the model, of length 2 for binary classification.
+        Can be obtained via, for example,
 
         ```python
         model = RandomForestClassifier()
@@ -776,23 +798,25 @@ def plot_shap_summary(
         explainer = shap.KernelExplainer(model.predict_proba, X_train)
         shap_values = explainer.shap_values(X_test)
         ```
-    X_test: np.ndarray,
+
+        If is of type `np.ndarray`, it should be of shape ``(num_samples, num_features, num_classes)``.
+    X_test : numpy.ndarray
         Test data (features) used for `shap.summary_plot`.
-    feature_list: list of str, optional,
+    feature_list : list of str, optional,
         List of feature names.
-    class_idx: int, default 1,
+    class_idx : int, default 1
         The index of the class to plot the summary plot for.
         None for multi(2)-class output.
-    zh2en: bool, default True,
+    zh2en : bool, default True
         If True, convert the feature names from Chinese to English.
-    max_display: int, default 10,
+    max_display : int, default 10
         The maximum number of features to display in the summary plot.
-    kwargs: dict,
+    **kwargs : dict
         Other keyword arguments for `shap.summary_plot`.
 
     Returns
     -------
-    figs: dict of plt.Figure,
+    figs : dict of plt.Figure
         Dictionary of figures, including
         - `dot`: beeswarm plot of shap values of dot type
         - `violin`: beeswarm plot of shap values of violin type
@@ -800,7 +824,7 @@ def plot_shap_summary(
 
     """
     mpl.rcParams.update(mpl.rcParamsDefault)
-    sns.set()
+    sns.set_theme()
     plt.rcParams["xtick.labelsize"] = 18
     plt.rcParams["ytick.labelsize"] = 18
     plt.rcParams["axes.labelsize"] = 24
@@ -809,18 +833,26 @@ def plot_shap_summary(
     if "Times New Roman" in _font_names and zh2en:
         # times.ttf
         if mpl.get_backend() == "pgf":
-            # setting "Times New Roman" would cause LatexError
-            plt.rcParams["font.family"] = "times"
+            # setting "Times New Roman" would cause LatexError (NOT correct now)
+            # plt.rcParams["font.family"] = "times"
+            plt.rcParams["font.family"] = "Times New Roman"
         else:
             plt.rcParams["font.family"] = "Times New Roman"
     else:
         plt.rcParams["font.family"] = "JDLangZhengTi"
 
     # remove prefixes of "合并症_"
-    feature_list = [f.replace("合并症_", "") for f in feature_list]
+    feature_list = [f.replace("合并症_", "") for f in feature_list]  # type: ignore
 
     row_height = 0.4
     fig_height = min(max_display, len(feature_list)) * row_height + 1.5
+
+    if isinstance(shap_values, list):
+        # old SHAP output format
+        shap_values = np.array(shap_values)
+    else:
+        # new SHAP output format
+        shap_values = shap_values.transpose((2, 0, 1))  # (num_classes, num_samples, num_features)
 
     if class_idx is None:
         shap_values_ = shap_values

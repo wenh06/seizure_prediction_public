@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 import pickle
 from copy import deepcopy
@@ -10,7 +9,7 @@ import numpy as np
 import pandas as pd
 from diff_binom_confint import compute_confidence_interval, compute_difference_confidence_interval
 
-from config import DEFAULTS, DataPreprocessConfig
+from config import CFG, DEFAULTS, DataPreprocessConfig
 from data_processing import get_seizure_risk, get_seizure_risk_difference, get_training_data
 from utils import separate_by_capital_letters
 
@@ -28,33 +27,39 @@ def gen_seizure_risk_diff_TDSB_ext(
     comorbidity_type: int = 0,
     biomarker_type: int = 0,
     overwrite: bool = False,
-) -> Union[pd.DataFrame, str, dict]:
+    strict_glioma: bool = True,
+) -> Union[pd.DataFrame, str, dict]:  # type: ignore
     """
     Generate the seizure risk difference table for the feature set of extended TDSB.
 
     Parameters
     ----------
-    save_path: Path or str, optional,
+    save_path : Path or str, optional
         The path to save the table.
-    return_type: str, default "pd",
+    return_type : str, default "pd"
         The type of the returned table.
         Can be one of "pd", "latex", "md", "markdown", "html", "dict".
-    zh2en: bool, default True,
+    zh2en : bool, default True
         Whether to convert the column names from Chinese to English.
-    comorbidity_type: int, default 0,
+    comorbidity_type : int, default 0
         the manifistation of type of the comorbidity variables.
         0 for comparison of "Yes" and "No" for each comorbidity variable.
         1 for comparisons for the positive part of each comorbidity variable.
-    biomarker_type: int, default 0,
+    biomarker_type : int, default 0
         the manifistation of type of the biomarker variables.
         0 for merging the classes other than "-" into one class.
         1 for keeping the classes other than "-" as they are.
-    overwrite: bool, default False,
+    overwrite : bool, default False
         Whether to overwrite the existing saved files.
+    strict_glioma : bool, default True
+        Whether to strictly filter glioma types.
+        If True, exclude data samples with non-glioma types,
+        e.g., those in `DataPreprocessConfig.exclude_types_zh` or
+        in `DataPreprocessConfig.exclude_types_en`.
 
     Returns
     -------
-    pd.DataFrame or str or dict,
+    pd.DataFrame or str or dict
         The seizure risk difference table.
 
     """
@@ -72,13 +77,13 @@ def gen_seizure_risk_diff_TDSB_ext(
     )
     Ref_indicator = " (Ref.)"
 
-    df_train, df_test, _ = get_training_data(
-        feature_config=dict(over_sampler=None, BIO_na_strategy="keep"),
+    df_train, df_test, _ = get_training_data(  # type: ignore
+        feature_config=CFG(over_sampler=None, BIO_na_strategy="keep"),
         feature_set="TDSB_ext",
         return_dtype="pd",
         allow_missing=True,
     )
-    df_data = pd.concat((df_train, df_test))
+    df_data = pd.concat((df_train, df_test))  # type: ignore
 
     rows = []
     ret_dict = {}
@@ -180,9 +185,9 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[age_group]['total'] / len(df_data):.1%}",
                 f"{n_affected[age_group]['train']}/{n_affected[age_group]['test']}",
                 f"{n_positive[age_group]}",
-                f"{seizure_risk[age_group]['risk']:.1%} (from {seizure_risk[age_group]['confidence_interval'][0]:.1%} to {seizure_risk[age_group]['confidence_interval'][1]:.1%})",
+                f"{seizure_risk[age_group]['risk']:.1%} (from {seizure_risk[age_group]['confidence_interval'][0]:.1%} to {seizure_risk[age_group]['confidence_interval'][1]:.1%})",  # type: ignore
                 (
-                    f"{seizure_risk_diff[age_group]['risk_difference']:.1%} (from {seizure_risk_diff[age_group]['confidence_interval'][0]:.1%} to {seizure_risk_diff[age_group]['confidence_interval'][1]:.1%})"
+                    f"{seizure_risk_diff[age_group]['risk_difference']:.1%} (from {seizure_risk_diff[age_group]['confidence_interval'][0]:.1%} to {seizure_risk_diff[age_group]['confidence_interval'][1]:.1%})"  # type: ignore
                     if age_group != ref_group
                     else "REF"
                 ),
@@ -241,9 +246,9 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[gender]['total'] / len(df_data):.1%}",
                 f"{n_affected[gender]['train']}/{n_affected[gender]['test']}",
                 f"{n_positive[gender]}",
-                f"{seizure_risk[gender]['risk']:.1%} (from {seizure_risk[gender]['confidence_interval'][0]:.1%} to {seizure_risk[gender]['confidence_interval'][1]:.1%})",
+                f"{seizure_risk[gender]['risk']:.1%} (from {seizure_risk[gender]['confidence_interval'][0]:.1%} to {seizure_risk[gender]['confidence_interval'][1]:.1%})",  # type: ignore
                 (
-                    f"{seizure_risk_diff[gender]['risk_difference']:.1%} (from {seizure_risk_diff[gender]['confidence_interval'][0]:.1%} to {seizure_risk_diff[gender]['confidence_interval'][1]:.1%})"
+                    f"{seizure_risk_diff[gender]['risk_difference']:.1%} (from {seizure_risk_diff[gender]['confidence_interval'][0]:.1%} to {seizure_risk_diff[gender]['confidence_interval'][1]:.1%})"  # type: ignore
                     if gender != ref_group
                     else "REF"
                 ),
@@ -301,14 +306,14 @@ def gen_seizure_risk_diff_TDSB_ext(
         seizure_risk_confint = compute_confidence_interval(
             n_positive[tumor_zone],
             n_affected[tumor_zone]["total"],
-            method=_CONFINT_METHOD,
+            method=_CONFINT_METHOD,  # type: ignore
         ).astuple()
         seizure_risk_diff_confint = compute_difference_confidence_interval(
             n_positive[tumor_zone],
             n_affected[tumor_zone]["total"],
             n_positive[ref_group],
             n_affected[ref_group]["total"],
-            method=_CONFINT_METHOD,
+            method=_CONFINT_METHOD,  # type: ignore
         ).astuple()
         rows.append(
             [
@@ -385,9 +390,9 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[who_grade]['total'] / len(df_data):.1%}",
                 f"{n_affected[who_grade]['train']}/{n_affected[who_grade]['test']}",
                 f"{n_positive[who_grade]}",
-                f"{seizure_risk[who_grade]['risk']:.1%} (from {seizure_risk[who_grade]['confidence_interval'][0]:.1%} to {seizure_risk[who_grade]['confidence_interval'][1]:.1%})",
+                f"{seizure_risk[who_grade]['risk']:.1%} (from {seizure_risk[who_grade]['confidence_interval'][0]:.1%} to {seizure_risk[who_grade]['confidence_interval'][1]:.1%})",  # type: ignore
                 (
-                    f"{seizure_risk_diff[who_grade]['risk_difference']:.1%} (from {seizure_risk_diff[who_grade]['confidence_interval'][0]:.1%} to {seizure_risk_diff[who_grade]['confidence_interval'][1]:.1%})"
+                    f"{seizure_risk_diff[who_grade]['risk_difference']:.1%} (from {seizure_risk_diff[who_grade]['confidence_interval'][0]:.1%} to {seizure_risk_diff[who_grade]['confidence_interval'][1]:.1%})"  # type: ignore
                     if who_grade != ref_group
                     else "REF"
                 ),
@@ -450,6 +455,8 @@ def gen_seizure_risk_diff_TDSB_ext(
         "分型混合",
         "分型其它",
     ]
+    if strict_glioma:
+        pathological_classes = [cls for cls in pathological_classes if cls not in DataPreprocessConfig.exclude_types_zh]
     for patho_class in pathological_classes:
         rows.append(
             [
@@ -459,9 +466,9 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[patho_class]['total'] / len(df_data):.1%}",
                 f"{n_affected[patho_class]['train']}/{n_affected[patho_class]['test']}",
                 f"{n_positive[patho_class]}",
-                f"{seizure_risk[patho_class]['risk']:.1%} (from {seizure_risk[patho_class]['confidence_interval'][0]:.1%} to {seizure_risk[patho_class]['confidence_interval'][1]:.1%})",
+                f"{seizure_risk[patho_class]['risk']:.1%} (from {seizure_risk[patho_class]['confidence_interval'][0]:.1%} to {seizure_risk[patho_class]['confidence_interval'][1]:.1%})",  # type: ignore
                 (
-                    f"{seizure_risk_diff[patho_class]['risk_difference']:.1%} (from {seizure_risk_diff[patho_class]['confidence_interval'][0]:.1%} to {seizure_risk_diff[patho_class]['confidence_interval'][1]:.1%})"
+                    f"{seizure_risk_diff[patho_class]['risk_difference']:.1%} (from {seizure_risk_diff[patho_class]['confidence_interval'][0]:.1%} to {seizure_risk_diff[patho_class]['confidence_interval'][1]:.1%})"  # type: ignore
                     if patho_class != ref_group
                     else "REF"
                 ),
@@ -517,14 +524,14 @@ def gen_seizure_risk_diff_TDSB_ext(
             seizure_risk_confint = compute_confidence_interval(
                 n_positive[comorbidity],
                 n_affected[comorbidity]["total"],
-                method=_CONFINT_METHOD,
+                method=_CONFINT_METHOD,  # type: ignore
             ).astuple()
             seizure_risk_diff_confint = compute_difference_confidence_interval(
                 n_positive[comorbidity],
                 n_affected[comorbidity]["total"],
                 n_positive[ref_group],
                 n_affected[ref_group]["total"],
-                method=_CONFINT_METHOD,
+                method=_CONFINT_METHOD,  # type: ignore
             ).astuple()
             rows.append(
                 [
@@ -588,14 +595,14 @@ def gen_seizure_risk_diff_TDSB_ext(
                 seizure_risk_confint = compute_confidence_interval(
                     n_positive[group],
                     n_affected[group]["total"],
-                    method=_CONFINT_METHOD,
+                    method=_CONFINT_METHOD,  # type: ignore
                 ).astuple()
                 seizure_risk_diff_confint = compute_difference_confidence_interval(
                     n_positive[group],
                     n_affected[group]["total"],
                     n_positive[ref_group],
                     n_affected[ref_group]["total"],
-                    method=_CONFINT_METHOD,
+                    method=_CONFINT_METHOD,  # type: ignore
                 ).astuple()
                 rows.append(
                     [
@@ -679,9 +686,9 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[resection_method]['total'] / len(df_data):.1%}",
                 f"{n_affected[resection_method]['train']}/{n_affected[resection_method]['test']}",
                 f"{n_positive[resection_method]}",
-                f"{seizure_risk[resection_method]['risk']:.1%} (from {seizure_risk[resection_method]['confidence_interval'][0]:.1%} to {seizure_risk[resection_method]['confidence_interval'][1]:.1%})",
+                f"{seizure_risk[resection_method]['risk']:.1%} (from {seizure_risk[resection_method]['confidence_interval'][0]:.1%} to {seizure_risk[resection_method]['confidence_interval'][1]:.1%})",  # type: ignore
                 (
-                    f"{seizure_risk_diff[resection_method]['risk_difference']:.1%} (from {seizure_risk_diff[resection_method]['confidence_interval'][0]:.1%} to {seizure_risk_diff[resection_method]['confidence_interval'][1]:.1%})"
+                    f"{seizure_risk_diff[resection_method]['risk_difference']:.1%} (from {seizure_risk_diff[resection_method]['confidence_interval'][0]:.1%} to {seizure_risk_diff[resection_method]['confidence_interval'][1]:.1%})"  # type: ignore
                     if resection_method != ref_group
                     else "REF"
                 ),
@@ -745,9 +752,9 @@ def gen_seizure_risk_diff_TDSB_ext(
                 f"{n_affected[tumor_size]['total'] / len(df_data):.1%}",
                 f"{n_affected[tumor_size]['train']}/{n_affected[tumor_size]['test']}",
                 f"{n_positive[tumor_size]}",
-                f"{seizure_risk[tumor_size]['risk']:.1%} (from {seizure_risk[tumor_size]['confidence_interval'][0]:.1%} to {seizure_risk[tumor_size]['confidence_interval'][1]:.1%})",
+                f"{seizure_risk[tumor_size]['risk']:.1%} (from {seizure_risk[tumor_size]['confidence_interval'][0]:.1%} to {seizure_risk[tumor_size]['confidence_interval'][1]:.1%})",  # type: ignore
                 (
-                    f"{seizure_risk_diff[tumor_size]['risk_difference']:.1%} (from {seizure_risk_diff[tumor_size]['confidence_interval'][0]:.1%} to {seizure_risk_diff[tumor_size]['confidence_interval'][1]:.1%})"
+                    f"{seizure_risk_diff[tumor_size]['risk_difference']:.1%} (from {seizure_risk_diff[tumor_size]['confidence_interval'][0]:.1%} to {seizure_risk_diff[tumor_size]['confidence_interval'][1]:.1%})"  # type: ignore
                     if tumor_size != ref_group
                     else "REF"
                 ),
@@ -812,14 +819,14 @@ def gen_seizure_risk_diff_TDSB_ext(
             if n_affected[bio]["total"] == 0:
                 continue
             seizure_risk_confint = compute_confidence_interval(
-                n_positive[bio], n_affected[bio]["total"], method=_CONFINT_METHOD
+                n_positive[bio], n_affected[bio]["total"], method=_CONFINT_METHOD  # type: ignore
             ).astuple()
             seizure_risk_diff_confint = compute_difference_confidence_interval(
                 n_positive[bio],
                 n_affected[bio]["total"],
                 n_positive[ref_group],
                 n_affected[ref_group]["total"],
-                method=_CONFINT_METHOD,
+                method=_CONFINT_METHOD,  # type: ignore
             ).astuple()
             rows.append(
                 [
@@ -899,14 +906,14 @@ def gen_seizure_risk_diff_TDSB_ext(
             if n_affected[bio]["total"] == 0:
                 continue
             seizure_risk_confint = compute_confidence_interval(
-                n_positive[bio], n_affected[bio]["total"], method=_CONFINT_METHOD
+                n_positive[bio], n_affected[bio]["total"], method=_CONFINT_METHOD  # type: ignore
             ).astuple()
             seizure_risk_diff_confint = compute_difference_confidence_interval(
                 n_positive[bio],
                 n_affected[bio]["total"],
                 n_positive[ref_group],
                 n_affected[ref_group]["total"],
-                method=_CONFINT_METHOD,
+                method=_CONFINT_METHOD,  # type: ignore
             ).astuple()
             rows.append(
                 [
@@ -969,21 +976,23 @@ def gen_seizure_risk_diff_TDSB_ext(
 
     if save_path is None:
         save_path = DEFAULTS.DATA_DIR / "seizure_risk_table.csv"
-    if not save_path.is_file() or overwrite:
+    if not save_path.is_file() or overwrite:  # type: ignore
         df.to_csv(save_path, index=False, header=False)
-        df.to_excel(save_path.with_suffix(".xlsx"), index=False, header=False)
+        df.to_excel(save_path.with_suffix(".xlsx"), index=False, header=False)  # type: ignore
 
     if return_type.lower() == "pd":
         return df
     elif return_type.lower() == "latex":
         rows = df.to_latex(header=False, index=False).splitlines()
         rows[0] = r"\begin{tabular}{@{\extracolsep{6pt}}llllllll@{}}"
-        rows[2] = (
-            r"\multicolumn{2}{l}{Feature} & \multicolumn{3}{l}{Affected} & \multicolumn{2}{l}{Seizure Risk ($95\%$ CI)} & Seizure Risk Difference  ($95\%$ CI) \\ \cline{1-2}\cline{3-5}\cline{6-7}\cline{8-8}"
+        rows[3] = (
+            r"\multicolumn{2}{l}{Feature} & \multicolumn{3}{l}{Affected} & \multicolumn{2}{l}{Seizure Risk ($95%$ CI)} & Seizure Risk Difference  ($95%$ CI) \\ \cline{1-2}\cline{3-5}\cline{6-7}\cline{8-8}"
         )
         ret_lines = "\n".join(rows)
-        if not save_path.with_suffix(".tex").is_file() or overwrite:
-            save_path.with_suffix(".tex").write_text(ret_lines)
+        # convert all % to \%
+        ret_lines = ret_lines.replace("%", r"\%")
+        if not save_path.with_suffix(".tex").is_file() or overwrite:  # type: ignore
+            save_path.with_suffix(".tex").write_text(ret_lines)  # type: ignore
         return ret_lines
     elif return_type.lower() in ["md", "markdown"]:
         return df.to_markdown(index=False)

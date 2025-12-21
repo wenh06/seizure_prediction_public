@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 import gzip
 import pickle
@@ -39,6 +38,7 @@ class FeatureSelector(ReprMixin):
         feature_selection_config: Optional[CFG] = None,
         preprocess_config: Optional[CFG] = None,
         feature_config: Optional[CFG] = None,
+        strict_glioma: bool = True,
     ) -> None:
         """
         Parameters
@@ -52,6 +52,8 @@ class FeatureSelector(ReprMixin):
         feature_config: CFG, optional,
             Feature engeering configuration.
             If not provided, the default configuration will be used.
+        strict_glioma: bool, default True,
+            Whether to use strict glioma filtering during data preprocessing.
 
         """
         if feature_selection_config is None:
@@ -78,11 +80,14 @@ class FeatureSelector(ReprMixin):
         self.__feature_list = None
         # self.__selector = None
 
+        self.strict_glioma = strict_glioma
+
     def perform_selection(
         self,
         selector: str = "rfe",
         parameters: Optional[CFG] = None,
         feature_set: str = "TDSB",
+        strict_glioma: Optional[bool] = None,
     ) -> List[Dict[str, Union[List[str], BaseEstimator]]]:
         """
         Perform feature selection.
@@ -96,6 +101,9 @@ class FeatureSelector(ReprMixin):
             If not provided, the default parameters will be used.
         feature_set: str, default "TDSB",
             Name of the feature set to be used.
+        strict_glioma: bool, optional,
+            Whether to use strict glioma filtering during data preprocessing.
+            If not provided, the value of `self.strict_glioma` will be used.
 
         Returns
         -------
@@ -110,6 +118,10 @@ class FeatureSelector(ReprMixin):
         else:
             _parameters = deepcopy(self.feature_selection_config[selector])
             parameters.update(_parameters)
+        assert parameters is not None
+
+        if strict_glioma is None:
+            strict_glioma = self.strict_glioma
 
         estimator = parameters.pop("model", None)
         if estimator is not None:
@@ -128,7 +140,9 @@ class FeatureSelector(ReprMixin):
             X_test,
             y_test,
             self.__feature_list,
-        ) = get_training_data(self.preprocess_config, feature_config, feature_set)
+        ) = get_training_data(  # type: ignore
+            self.preprocess_config, feature_config, feature_set=feature_set, strict_glioma=strict_glioma
+        )
         feature_config.feature_list = self.__feature_list
 
         total_feature_num = len(self.__feature_list)
@@ -148,9 +162,9 @@ class FeatureSelector(ReprMixin):
                 param[n_features_to_select_key] = num
             if estimator is not None:
                 param_estimator = param.pop("estimator", None)
-                selector_obj = self.selector_map[selector](param_estimator, **param)
+                selector_obj = self.selector_map[selector](param_estimator, **param)  # type: ignore
             else:
-                selector_obj = self.selector_map[selector](**param)
+                selector_obj = self.selector_map[selector](**param)  # type: ignore
             result = {}
 
             if isinstance(selector_obj, VarianceThreshold):
@@ -197,6 +211,9 @@ class FeatureSelector(ReprMixin):
         with tqdm(
             self.feature_selection_config.items(),
             total=len(self.feature_selection_config),
+            desc="Feature Selection Full Run",
+            dynamic_ncols=True,
+            mininterval=1.0,
         ) as pbar:
             for selector, parameters in pbar:
                 sel_res[selector] = self.perform_selection(selector, parameters)
@@ -230,7 +247,7 @@ class FeatureSelector(ReprMixin):
             if not hasattr(l_res[0]["selector"], "estimator"):
                 continue
             for idx, res in enumerate(l_res):
-                X_train, y_train, X_test, y_test, _ = get_training_data(
+                X_train, y_train, X_test, y_test, _ = get_training_data(  # type: ignore
                     sel_res["preprocess_config"],
                     sel_res["feature_config"],
                     feature_set="TDSB",
@@ -249,7 +266,7 @@ class FeatureSelector(ReprMixin):
         sel_res: Dict[str, Any],
         method: str = "rfe",
         extra_config: Optional[CFG] = None,
-    ) -> FeatureConfig:
+    ) -> FeatureConfig:  # type: ignore
         """
         Get the feature configuration used when doing the feature selection.
 
@@ -317,7 +334,7 @@ class FeatureSelector(ReprMixin):
     @property
     def feature_list(self) -> List[str]:
         """ """
-        return self.__feature_list
+        return self.__feature_list  # type: ignore
 
     # @property
     # def selector(self) -> BaseEstimator:
@@ -335,7 +352,7 @@ class FeatureSelector(ReprMixin):
             "sfm": SelectFromModel,
             "sequential": SequentialFeatureSelector,
             "sfs": SequentialFeatureSelector,
-        }
+        }  # type: ignore
 
 
 if __name__ == "__main__":

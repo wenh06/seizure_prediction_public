@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 from copy import deepcopy
 from functools import partial
@@ -54,9 +53,13 @@ class CFG(dict):
         if kwargs:
             d.update(**kwargs)
         for k, v in d.items():
-            try:
+            # try:
+            #     setattr(self, k, v)
+            # except Exception:
+            #     dict.__setitem__(self, k, v)
+            if isinstance(k, str) and k.isidentifier():
                 setattr(self, k, v)
-            except Exception:
+            else:
                 dict.__setitem__(self, k, v)
         # Class attributes
         exclude_fields = ["update", "pop"]
@@ -69,12 +72,14 @@ class CFG(dict):
             value = [self.__class__(x) if isinstance(x, dict) else x for x in value]
         elif isinstance(value, dict) and not isinstance(value, self.__class__):
             value = self.__class__(value)
-        super().__setattr__(name, value)
+
+        if isinstance(name, str) and name.isidentifier():
+            super().__setattr__(name, value)
         super().__setitem__(name, value)
 
     __setitem__ = __setattr__
 
-    def update(self, new_cfg: Optional[MutableMapping] = None, **kwargs: Any) -> None:
+    def update(self, new_cfg: Optional[MutableMapping] = None, **kwargs: Any) -> None:  # type: ignore
         """The new hierarchical update method.
 
         Parameters
@@ -174,7 +179,7 @@ DataPreprocessConfig.zh2en_mapping = {
     "分型胶质母": "GlioblastomaMultiforme",
     "分型间变型星形": "AnaplasticAstrocytoma",
     "分型少突星形": "Oligoastrocytoma",
-    "分型星形": "Asrocytoma",
+    "分型星形": "Astrocytoma",
     "分型毛细胞星形": "PilocyticAstrocytoma",
     "分型中枢神经": "Neurocytoma",
     "分型混合": "Mixed",
@@ -412,6 +417,15 @@ DataPreprocessConfig.x_col_mappings.用药改变 = {"术后改变用药": 2, "�
 DataPreprocessConfig.x_col_mappings.乙N丙N = {"左0丙0": 0, "左1丙0": 1, "左0丙1": 2, "左1丙1": 3}
 DataPreprocessConfig.x_col_mappings.C肿瘤最大直径 = {"<5": 1, ">=5": 0}
 
+DataPreprocessConfig.exclude_types_zh = [
+    "分型中枢神经",
+    "分型混合",
+    "分型其它",
+]
+DataPreprocessConfig.exclude_types_en = [
+    DataPreprocessConfig.zh2en_mapping[item] for item in DataPreprocessConfig.exclude_types_zh
+]
+
 DataPreprocessConfig.BIO_mapping = {
     "+++": 5,
     "++": 4,
@@ -440,6 +454,7 @@ FeatureConfig.sets.TDSB_ext = FeatureConfig.sets.TDS + DataPreprocessConfig.BIO_
 # FeatureConfig.sets.TDMB = FeatureConfig.sets.TDM + ["BIO_IDH1-R132"]
 # FeatureConfig.sets.TDSMB = FeatureConfig.sets.TDSM + ["BIO_IDH1-R132"]
 FeatureConfig.BIO_na_strategy = "drop"  # "knn", "random_uniform", "random_distributional", "keep"
+
 FeatureConfig.set_list = list(FeatureConfig.sets)
 
 FeatureConfig.binarize_variables = False
@@ -580,8 +595,9 @@ FeatureSelectionConfig.sequential = CFG(
 
 
 ServingConfig = CFG()
-ServingConfig.model_path = DEFAULTS.SAVE_DIR / "spm_rf_TDSB_drop.pkl"
+ServingConfig.model_path = DEFAULTS.SAVE_DIR / "spm_sk_mlp_TDSB_drop.pkl"  # "spm_rf_TDSB_drop.pkl"
 ServingConfig.public_domain = None
+# ServingConfig.public_ip = "43.140.244.112"
 ServingConfig.public_ip = "101.43.135.121"
 ServingConfig.internal_ip = "0.0.0.0"
 ServingConfig.port = 11111
