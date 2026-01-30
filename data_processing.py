@@ -308,7 +308,7 @@ def get_features(
         feature_list = feature_cols
 
     # check nan cells in the refined data
-    if not kwargs.get("allow_missing", False) and df_refined.isnull().values.any() and feature_config.BIO_na_strategy != "drop":
+    if not kwargs.get("allow_missing", False) and df_refined.isnull().values.any() and feature_config.BIO_na_strategy != "keep":
         err = {
             row_idx + 1: [c for c in df_refined.columns if pd.isnull(df_refined[c][row_idx])]
             for row_idx in range(df_refined.shape[0])
