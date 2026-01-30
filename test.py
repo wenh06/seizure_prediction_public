@@ -35,6 +35,8 @@ def test_grid_search():
     feature_config = dict(BIO_na_strategy="keep", binarize_variables=False)  # drop, keep
     grid_search = GridSearch(feature_config=feature_config, grid_search_config=SimpleGridSearchConfig)
     for feature_set in FeatureConfig.sets:
+        if feature_set == "TDSB_ext":
+            continue  # not used in the paper experiments
         for strategy in ["keep", "drop"]:
             feature_config["BIO_na_strategy"] = strategy
             grid_search.update_feature_config(config=feature_config)
