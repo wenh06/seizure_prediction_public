@@ -498,11 +498,11 @@ GridSearchConfig.xgb = ParameterGrid(
 GridSearchConfig.gdbt = ParameterGrid(
     {
         "n_estimators": [10, 15, 20, 50, 100],
-        "loss": ["deviance", "exponential"],
+        "loss": ["log_loss", "exponential"],
         "learning_rate": [0.01, 0.05, 0.1],
         "criterion": ["friedman_mse", "mse"],
         "min_samples_split": [2, 3, 4],
-        "max_features": ["auto", "sqrt", "log2"],
+        "max_features": ["sqrt", "log2"],
         "warm_start": [True, False],
         "ccp_alpha": [0.0, 0.1, 0.5, 1.0],
     }
