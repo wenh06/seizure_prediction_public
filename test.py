@@ -7,7 +7,9 @@ from grid_search import GridSearch
 
 
 def simplify_grid_search_config(config: CFG) -> CFG:
-    """Simplify the grid search configuration by retaining only the first value of each hyperparameter."""
+    """Simplify the grid search configuration by retaining
+    only half of each parameter's values.
+    """
     simple_config = CFG()
 
     for attr_name in ["rf", "xgb", "gdbt", "svc", "lr", "bagging", "sk_mlp"]:
@@ -15,7 +17,7 @@ def simplify_grid_search_config(config: CFG) -> CFG:
             param_grid = getattr(config, attr_name)
             original_params = param_grid.param_grid[0]
 
-            simplified_params = {k: [v[0]] for k, v in original_params.items()}
+            simplified_params = {k: v[: max(1, len(v) // 2)] for k, v in original_params.items()}
 
             setattr(simple_config, attr_name, ParameterGrid(simplified_params))
 
