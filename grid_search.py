@@ -3,6 +3,7 @@
 import gzip
 import json
 import multiprocessing as mp
+import os
 import pickle
 import sys
 import traceback
@@ -879,8 +880,9 @@ def _perform_grid_search_no_cv(
                 clf_gs = get_model(model_name, updated_params)
                 clf_gs.fit(X_train, y_train)
             except Exception as e:
-                print(f"Error training model {model_name} with params {updated_params}: {e}")
-                traceback.print_exc()
+                if os.environ.get("DEBUG_MODE", "0") == "1":
+                    print(f"Error training model {model_name} with params {updated_params}: {e}")
+                    traceback.print_exc()
                 continue
             y_prob = clf_gs.predict_proba(X_val)
             metric_score = roc_auc_score(y_true=y_val, y_score=y_prob[:, 1])
