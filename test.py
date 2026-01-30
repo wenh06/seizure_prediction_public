@@ -1,5 +1,7 @@
 """ """
 
+import math
+
 from sklearn.model_selection import ParameterGrid
 
 from config import CFG, FeatureConfig, GridSearchConfig
@@ -17,7 +19,7 @@ def simplify_grid_search_config(config: CFG) -> CFG:
             param_grid = getattr(config, attr_name)
             original_params = param_grid.param_grid[0]
 
-            simplified_params = {k: v[: max(1, len(v) // 2)] for k, v in original_params.items()}
+            simplified_params = {k: v[: max(1, math.ceil(len(v) / 2))] for k, v in original_params.items()}
 
             setattr(simple_config, attr_name, ParameterGrid(simplified_params))
 
