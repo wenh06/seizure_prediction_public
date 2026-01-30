@@ -308,14 +308,17 @@ def get_features(
         feature_list = feature_cols
 
     # check nan cells in the refined data
-    if not kwargs.get("allow_missing", False) and df_refined.isnull().values.any() and feature_config.BIO_na_strategy != "keep":
+    if not kwargs.get("allow_missing", False) and df_refined.isnull().values.any():
         err = {
             row_idx + 1: [c for c in df_refined.columns if pd.isnull(df_refined[c][row_idx])]
             for row_idx in range(df_refined.shape[0])
             if df_refined.isnull().iloc[row_idx].any()
         }
         err = "; ".join([f"the {row_idx}-th piece of data has nan values in columns `{cols}`" for row_idx, cols in err.items()])
-        raise ValueError(f"nan cells detected in the refined data: {err}")
+        err_msg = (
+            f"feature_set: {feature_set}\n" f"feature_list: {feature_list}\n" f"nan cells detected in the refined data: {err}"
+        )
+        raise ValueError(err_msg)
 
     return df_refined, feature_list  # type: ignore
 
