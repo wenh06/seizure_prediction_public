@@ -127,3 +127,27 @@ nohup python grid_search.py -n 10 > /dev/null 2>&1 & echo $! > ./log/gs.pid
 :point_right: [Back to top](#seizure_prediction)
 
 </details>
+
+## Citation
+
+If you find this repository useful for your research, please consider citing the following paper:
+
+<details>
+<summary>Click to expand!</summary>
+
+```bibtex
+@article{Yang_2026_Seizure,
+      title = {{Seizure Risk Prediction Using Machine Learning Following Glioma Resection Surgery in Seizure-Naïve Patients}},
+     author = {Yang, Hua and Wen, Hao and Ye, Jiadan and Yang, Li and Zhao, Zhigang},
+    journal = {{Journal of Clinical Neuroscience}},
+     volume = {146},
+       issn = {0967-5868},
+        doi = {10.1016/j.jocn.2026.111869},
+  publisher = {{Elsevier BV}},
+       year = {2026},
+      month = {4},
+      pages = {111869}
+}
+```
+
+</details>
