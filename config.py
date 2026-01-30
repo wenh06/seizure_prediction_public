@@ -471,7 +471,7 @@ GridSearchConfig.rf = ParameterGrid(
         "min_samples_split": [2, 3, 4],
         # 'min_samples_leaf': 1,
         # 'min_weight_fraction_leaf': 0.0,
-        "max_features": ["auto", "sqrt", "log2"],
+        "max_features": ["sqrt", "log2"],
         # 'max_leaf_nodes': None,
         # 'min_impurity_decrease': 0.0,
         "bootstrap": [True, False],

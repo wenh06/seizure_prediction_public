@@ -21,6 +21,10 @@ def simplify_grid_search_config(config: CFG) -> CFG:
 
             simplified_params = {k: v[: max(1, math.ceil(len(v) / 2))] for k, v in original_params.items()}
 
+            # fix potential inconsistencies in simplified parameters
+            if "warm_start" in simplified_params:
+                simplified_params["warm_start"] = [True, False]
+
             setattr(simple_config, attr_name, ParameterGrid(simplified_params))
 
     return simple_config
