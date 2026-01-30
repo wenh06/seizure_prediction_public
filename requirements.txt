@@ -1,5 +1,5 @@
 numpy
-pandas
+pandas<3
 openpyxl
 scikit-learn==1.7.2
 imbalanced-learn==0.14.0

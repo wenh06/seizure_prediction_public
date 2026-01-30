@@ -3,7 +3,7 @@ PyYAML
 deprecate_kwargs
 diff_binom_confint
 numpy
-pandas
+pandas<3
 scikit-learn==1.7.2
 imbalanced-learn==0.14.0
 xgboost==3.1.2

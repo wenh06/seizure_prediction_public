@@ -125,32 +125,23 @@ def preprocess_data(
 
     for c in ["肿瘤分区", "C肿瘤分区1"]:
         if c in df_refined.columns:
-            # df_refined.loc[df_refined.index, c] = df_refined[c].fillna("其它")
             df_refined[c] = df_refined[c].fillna("其它")
 
     # Converting categorical feature to numeric
     if y_col in df_refined.columns:
-        # df_refined.loc[df_refined.index, y_col] = df_refined[y_col].map(config.y_col_mapping)
         df_refined[y_col] = df_refined[y_col].map(config.y_col_mapping)
 
     # BIO features
     BIO_cate_var = [c for c in df_refined.columns if c in config.BIO_cate_var]
-    # df_refined.loc[df_refined.index, BIO_cate_var] = df_refined[BIO_cate_var].fillna(config.BIO_na_fillvalue)
     df_refined[BIO_cate_var] = df_refined[BIO_cate_var].fillna(config.BIO_na_fillvalue)
     for c in BIO_cate_var:
-        # df_refined.loc[df_refined.index, c] = df_refined[c].map(config.BIO_mapping)
         df_refined[c] = df_refined[c].map(config.BIO_mapping)
 
     # use OneHotEncoding to refine tumor zone features
-    # 肿瘤分区 = list(set(list_sum([cell.split(",") for cell in df_refined.肿瘤分区])))
     肿瘤分区 = [item.replace("肿瘤分区_", "") for item in config.tumor_cate_var if item.startswith("肿瘤分区_")]
     if "肿瘤分区" in df_refined.columns:
         for item in 肿瘤分区:
-            # df_refined.loc[df_refined.index, f"肿瘤分区_{item}"] = df_refined["肿瘤分区"].apply(lambda s: int(item in s.split(",")))
             df_refined[f"肿瘤分区_{item}"] = df_refined["肿瘤分区"].apply(lambda s: int(item in s.split(",")))
-        # df_refined.loc[df_refined.index, "肿瘤分区_额或颞"] = (
-        #     df_refined["肿瘤分区_额"] | df_refined["肿瘤分区_颞"]
-        # )
         df_refined.drop(columns=["肿瘤分区"], inplace=True)
 
     # ordinal mapping
@@ -172,7 +163,6 @@ def preprocess_data(
     else:
         age_scaler = MinMaxScaler()
     if "年龄" in df_refined.columns:
-        # df_refined.loc[df_refined.index, "年龄"] = age_scaler.fit_transform(df_refined["年龄"].values.reshape(-1, 1)).flatten()
         df_refined["年龄"] = age_scaler.fit_transform(df_refined["年龄"].values.reshape(-1, 1)).flatten()
         if not age_scaler_path.is_file():
             age_scaler_path.write_bytes(pickle.dumps(age_scaler))
@@ -325,7 +315,10 @@ def get_features(
             if df_refined.isnull().iloc[row_idx].any()
         }
         err = "; ".join([f"the {row_idx}-th piece of data has nan values in columns `{cols}`" for row_idx, cols in err.items()])
-        raise ValueError(f"nan cells detected in the refined data: {err}")
+        err_msg = (
+            f"feature_set: {feature_set}\n" f"feature_list: {feature_list}\n" f"nan cells detected in the refined data: {err}"
+        )
+        raise ValueError(err_msg)
 
     return df_refined, feature_list  # type: ignore
 

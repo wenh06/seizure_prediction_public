@@ -1,13 +1,42 @@
 """ """
 
-from config import FeatureConfig
+import math
+
+from sklearn.model_selection import ParameterGrid
+
+from config import CFG, FeatureConfig, GridSearchConfig
 from grid_search import GridSearch
 
 
+def simplify_grid_search_config(config: CFG) -> CFG:
+    """Simplify the grid search configuration by retaining
+    only half of each parameter's values.
+    """
+    simple_config = CFG()
+
+    for attr_name in ["rf", "xgb", "gdbt", "svc", "lr", "bagging", "sk_mlp"]:
+        if hasattr(config, attr_name):
+            param_grid = getattr(config, attr_name)
+            original_params = param_grid.param_grid[0]
+
+            simplified_params = {k: v[: max(1, math.ceil(len(v) / 2))] for k, v in original_params.items()}
+
+            # fix potential inconsistencies in simplified parameters
+            if "warm_start" in simplified_params:
+                simplified_params["warm_start"] = [True, False]
+
+            setattr(simple_config, attr_name, ParameterGrid(simplified_params))
+
+    return simple_config
+
+
 def test_grid_search():
+    SimpleGridSearchConfig = simplify_grid_search_config(GridSearchConfig)
     feature_config = dict(BIO_na_strategy="keep", binarize_variables=False)  # drop, keep
-    grid_search = GridSearch(feature_config=feature_config)
+    grid_search = GridSearch(feature_config=feature_config, grid_search_config=SimpleGridSearchConfig)
     for feature_set in FeatureConfig.sets:
+        if feature_set == "TDSB_ext":
+            continue  # not used in the paper experiments
         for strategy in ["keep", "drop"]:
             feature_config["BIO_na_strategy"] = strategy
             grid_search.update_feature_config(config=feature_config)
