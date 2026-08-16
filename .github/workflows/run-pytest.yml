@@ -36,11 +36,22 @@ jobs:
       uses: gacts/run-and-post-run@v1
       with:
         run: |
-          sudo apt-get update
-          sudo apt-get install wget
-          wget -O ${{ env.DATA_DST }} ${{ secrets.DATA_STORAGE_PLACE_AND_PASSWORD }}
+          # MEGA file links embed the decryption key, so the URL is stored in a
+          # GitHub repository secret and resolved at runtime — never commit it.
+          # megadl (megatools) is used because mega.nz/file links are not plain
+          # HTTP downloads (a bare curl/wget returns an HTML page).
+          DATA_URL="${{ secrets.DATA_STORAGE_PLACE_AND_PASSWORD }}"
+          if [ -z "$DATA_URL" ]; then
+            echo "DATA_STORAGE_PLACE_AND_PASSWORD secret not set — cannot download dataset."
+            exit 1
+          fi
+          sudo apt-get update -qq && sudo apt-get install -y -qq megatools
+          mkdir -p "$(dirname ${{ env.DATA_DST }})"
+          megadl --path ${{ env.DATA_DST }} "$DATA_URL"
         post: |
-          rm ${{ env.DATA_DST }}
+          if [ -f ${{ env.DATA_DST }} ]; then
+            rm ${{ env.DATA_DST }}
+          fi
     - name: Test with pytest
       run: |
         DEBUG_MODE=1 pytest -vv -s test.py
