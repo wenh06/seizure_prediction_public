@@ -3,4 +3,5 @@ save
 data
 !data/train-test-split-8-2.json
 !data/named-colors.csv
+!data/example_json_input.json
 images

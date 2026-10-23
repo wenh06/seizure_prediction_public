@@ -20,7 +20,7 @@ st.set_page_config(
 )
 
 
-FLASK_SERVING_URL = f"http://{ServingConfig.public_ip}:{ServingConfig.port}/{ServingConfig.name}"
+FLASK_SERVING_URL = ServingConfig.url
 
 
 def fetch_prediction(data: List[dict]) -> dict:

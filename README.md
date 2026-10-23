@@ -8,9 +8,19 @@ Seizure prediction using clinical data.
 
 Risk differences analysis were performed with [`diff-binom-confint`](https://pypi.org/project/diff-binom-confint/), which is also hosted on [Github](https://github.com/DeepPSP/DBCI/).
 
-Serving API: http://101.43.135.121:11111/seizure_prediction (POST only)
+## Serving & Online APP
 
-Online APP: https://seizure-prediction.streamlit.app/ | http://101.43.135.121:8501/
+| Service | URL | Status |
+|---|---|---|
+| REST API (POST only) | **https://deep-psp.tech/seizure_prediction** | ✅ current |
+| Online APP (self-hosted) | **https://deep-psp.tech/app/seizure/** | ✅ current |
+| Online APP (Streamlit Cloud) | https://seizure-prediction.streamlit.app/ | ✅ current |
+
+> ⚠️ **Deprecated** — no longer reachable from the public internet:
+> - ~~http://101.43.135.121:11111/seizure_prediction~~ — legacy plain-HTTP API endpoint
+> - ~~http://101.43.135.121:8501/~~ — legacy Streamlit port
+>
+> The API is served by a Docker container (`seizure-prediction-service:py313`, Python 3.13 / scikit-learn 1.9.1 / gunicorn) behind an Apache reverse proxy (TLS). The models were migrated from the legacy Python 3.8 / scikit-learn 0.24 stack, with predictions verified bit-identical to the originals.
 
 ## File/folder description
 

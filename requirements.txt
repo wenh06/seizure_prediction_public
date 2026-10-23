@@ -1,9 +1,9 @@
 numpy
-pandas<3
+pandas
 openpyxl
-scikit-learn==1.7.2
-imbalanced-learn==0.14.0
-xgboost==3.1.2
+scikit-learn==1.9.1
+imbalanced-learn==0.14.2
+xgboost-cpu==3.4.1
 diff-binom-confint
 bib-lookup
 deprecate_kwargs

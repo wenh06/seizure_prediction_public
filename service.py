@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import os
 import traceback  # noqa: F401
 import warnings
 from copy import deepcopy
@@ -17,6 +18,11 @@ from models import SeizurePredictionModel
 seizure_app = Flask(__name__)
 
 _ServingConfig = deepcopy(ServingConfig)
+
+# gunicorn 导入本模块时 parse_args 不会执行, 可用环境变量覆盖 ServingConfig
+# (docker run -v $PWD/serving.yaml:/srv/serving.yaml -e SERVING_CONFIG_YAML=/srv/serving.yaml ...)
+if _env_cfg := os.getenv("SERVING_CONFIG_YAML"):
+    _ServingConfig.update(yaml.safe_load(Path(_env_cfg).read_text()))
 
 _LoadedModel = SeizurePredictionModel.from_file(_ServingConfig.model_path)
 
@@ -111,7 +117,7 @@ if __name__ == "__main__":
     # command for running in background
     # nohup python service.py --ip xx.xx.xx.xx [--port xxxx] > ./log/service.log 2>&1 & echo $! > ./log/service.pid
     args = parse_args()
-    seizure_app.run(host=args["ip"], port=args["port"], debug=True)
+    seizure_app.run(host=args["ip"], port=args["port"], debug=False)
 
     # or run in a container:
     # docker run -d -p [port1]:[port2] seizure-prediction-service:latest bash -c "python service.py --ip 0.0.0.0 --port [port2]"

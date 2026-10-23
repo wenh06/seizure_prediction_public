@@ -598,10 +598,11 @@ ServingConfig = CFG()
 ServingConfig.model_path = DEFAULTS.SAVE_DIR / "spm_sk_mlp_TDSB_drop.pkl"  # "spm_rf_TDSB_drop.pkl"
 ServingConfig.public_domain = None
 # ServingConfig.public_ip = "43.140.244.112"
-ServingConfig.public_ip = "101.43.135.121"
+ServingConfig.public_ip = "101.43.135.121"  # deprecated: use ServingConfig.url instead
 ServingConfig.internal_ip = "0.0.0.0"
 ServingConfig.port = 11111
 ServingConfig.name = "seizure_prediction"
+ServingConfig.url = "https://deep-psp.tech/seizure_prediction"  # public serving url (Apache reverse proxy, TLS)
 
 
 clf_metric_aliases = CFG(

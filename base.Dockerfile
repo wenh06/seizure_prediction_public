@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.13-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -57,3 +57,6 @@ EXPOSE $port
 
 # command to run the image (with serving):
 # docker run -d -p 11111:11111 seizure-prediction-service:latest bash -c "python service.py --ip 0.0.0.0 --port 11111"
+
+# default serving command (gunicorn); override with `bash -c ...` if needed
+CMD ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:11111", "service:seizure_app"]
