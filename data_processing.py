@@ -64,7 +64,7 @@ def load_raw_data(data_fp: Optional[Union[str, Path]] = None, strict_glioma: boo
 
     """
     df_data = pd.read_excel(data_fp or _DATA_FP, engine="openpyxl")
-    df_data.set_index("患者编号", inplace=True)
+    df_data = df_data.set_index("患者编号")
     if strict_glioma:
         exclude_types = DataPreprocessConfig.exclude_types_zh
         df_data = df_data[~df_data["病理分型粗"].isin(exclude_types)]
@@ -142,7 +142,7 @@ def preprocess_data(
     if "肿瘤分区" in df_refined.columns:
         for item in 肿瘤分区:
             df_refined[f"肿瘤分区_{item}"] = df_refined["肿瘤分区"].apply(lambda s: int(item in s.split(",")))
-        df_refined.drop(columns=["肿瘤分区"], inplace=True)
+        df_refined = df_refined.drop(columns=["肿瘤分区"])
 
     # ordinal mapping
     for c in config.categorical_var:
@@ -269,7 +269,7 @@ def get_features(
             pass
         else:
             if len(bio_cont_cols) > 0:
-                df_refined.drop(columns=bio_cont_cols, inplace=True)
+                df_refined = df_refined.drop(columns=bio_cont_cols)
             if len(bio_cate_cols) > 0:
                 series = (df_refined[bio_cate_cols] == preprocess_config.BIO_mapping[preprocess_config.BIO_na_fillvalue]).any(
                     axis=1
@@ -295,7 +295,7 @@ def get_features(
             feature_cols.remove(c)
             feature_cols.extend(df_dummy.columns.tolist())
         df_refined = pd.concat([df_refined] + l_dummy_df, axis=1)
-        df_refined.drop(columns=l_dummy_cols, inplace=True)
+        df_refined = df_refined.drop(columns=l_dummy_cols)
 
     if feature_list is not None:
         assert set(feature_list).issubset(df_refined.columns.tolist())
