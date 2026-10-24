@@ -18,7 +18,8 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        # scikit-learn 1.9 / xgboost-cpu 3.4 require Python >= 3.12
+        python-version: ["3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v7
@@ -33,25 +34,42 @@ jobs:
         python -m pip install pytest pytest-xdist # Testing packages
         python -m pip freeze
     - name: Download secret data
-      uses: gacts/run-and-post-run@v1
-      with:
-        run: |
-          # MEGA file links embed the decryption key, so the URL is stored in a
-          # GitHub repository secret and resolved at runtime — never commit it.
-          # megadl (megatools) is used because mega.nz/file links are not plain
-          # HTTP downloads (a bare curl/wget returns an HTML page).
-          DATA_URL="${{ secrets.DATA_STORAGE_PLACE_AND_PASSWORD }}"
-          if [ -z "$DATA_URL" ]; then
-            echo "DATA_STORAGE_PLACE_AND_PASSWORD secret not set — cannot download dataset."
-            exit 1
-          fi
-          sudo apt-get update -qq && sudo apt-get install -y -qq megatools
-          mkdir -p "$(dirname ${{ env.DATA_DST }})"
-          megadl --path ${{ env.DATA_DST }} "$DATA_URL"
-        post: |
-          if [ -f ${{ env.DATA_DST }} ]; then
-            rm ${{ env.DATA_DST }}
-          fi
+      env:
+        DATA_URL: ${{ secrets.DATA_STORAGE_PLACE_AND_PASSWORD }}
+        DATA_MD5: 60559f5a05aa6fde52d1978882d85227
+      run: |
+        # The MEGA link embeds the decryption key, so the URL is stored in a
+        # GitHub repository secret and resolved at runtime — never commit it.
+        # mega.nz links are not plain HTTP downloads (a bare curl/wget returns
+        # an HTML page) and megatools no longer works; fetch via the MEGA API
+        # directly with mega_download.py (requests + pycryptodome, no MEGA
+        # account needed).
+        pip install -q pycryptodome
+        python - <<'EOF'
+        import os
+        from pathlib import Path
+
+        from mega_download import mega_download
+
+        url = os.environ.get("DATA_URL", "")
+        if not url:
+            raise SystemExit(
+                "DATA_STORAGE_PLACE_AND_PASSWORD secret not set — cannot download dataset."
+            )
+        dst = Path(os.environ["DATA_DST"])  # data/胶质瘤20220609.xlsx
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        # a single xlsx file, not an archive -> extract=False
+        mega_download(url, dst.parent, extract=False, md5=os.environ.get("DATA_MD5") or None)
+        # mega_download names the file after the MEGA-stored filename; make
+        # sure it lands at DATA_DST even if that name differs
+        if not dst.exists():
+            candidates = list(dst.parent.glob("*.xlsx"))
+            if len(candidates) == 1:
+                candidates[0].rename(dst)
+            else:
+                raise SystemExit(f"expected {dst} after download, found {candidates or 'nothing'}")
+        print("dataset ready:", dst, dst.stat().st_size, "bytes")
+        EOF
     - name: Test with pytest
       run: |
         DEBUG_MODE=1 pytest -vv -s test.py
