@@ -1,4 +1,4 @@
-FROM texlive:latest-small
+FROM texlive/texlive:latest-small
 # base image python version >= 3.10.7
 
 ENV DEBIAN_FRONTEND=noninteractive
